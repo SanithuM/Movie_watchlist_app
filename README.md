@@ -1,4 +1,6 @@
-# 🎬 CineKeep - Movie Wishlist Application
+# 🎬 CineList — Movie Wishlist & Discovery App
+
+**CineList** is a cross-platform **Flutter** mobile application designed to help users discover movies, track what they want to watch, and rate films in a fun and intuitive way. The app combines a clean dark-mode UI with real-time cloud sync and offline-first support to deliver a smooth user experience.
 
 ---
 
@@ -105,60 +107,72 @@ This is a **group project**, and responsibilities were divided as follows:
 
 The project follows a **Clean Architecture + Feature-First** approach:
 
-lib
- ┣ core
- ┃ ┣ constants
- ┃ ┃ ┗ tmdb_constants.dart
- ┃ ┣ services
- ┃ ┃ ┣ api_service.dart
- ┃ ┃ ┣ connectivity_service.dart
- ┃ ┃ ┗ local_storage_service.dart
- ┃ ┣ utils
- ┃ ┃ ┗ date_utils.dart
- ┃ ┗ widgets
- ┃ ┃ ┣ auth_wrapper.dart
- ┃ ┃ ┣ error_dialog.dart
- ┃ ┃ ┣ loading_spinner.dart
- ┃ ┃ ┗ popcorn_rater.dart
- ┣ features
- ┃ ┣ auth
- ┃ ┃ ┣ data
- ┃ ┃ ┃ ┗ auth_service.dart
- ┃ ┃ ┗ presentation
- ┃ ┃ ┃ ┣ login_screen.dart
- ┃ ┃ ┃ ┗ signup_screen.dart
- ┃ ┗ movies
- ┃ ┃ ┣ data
- ┃ ┃ ┃ ┣ datasources
- ┃ ┃ ┃ ┃ ┣ local_data_source.dart
- ┃ ┃ ┃ ┃ ┗ remote_data_source.dart
- ┃ ┃ ┃ ┣ models
- ┃ ┃ ┃ ┃ ┗ movie_model.dart
- ┃ ┃ ┃ ┗ repositories
- ┃ ┃ ┃ ┃ ┗ movie_repository.dart
- ┃ ┃ ┣ domain
- ┃ ┃ ┃ ┗ entities
- ┃ ┃ ┃ ┃ ┗ movie.dart
- ┃ ┃ ┗ presentation
- ┃ ┃ ┃ ┣ providers
- ┃ ┃ ┃ ┃ ┣ movie_providers.dart
- ┃ ┃ ┃ ┃ ┣ profile_provider.dart
- ┃ ┃ ┃ ┃ ┣ search_provider.dart
- ┃ ┃ ┃ ┃ ┗ wishlist_provider.dart
- ┃ ┃ ┃ ┣ screens
- ┃ ┃ ┃ ┃ ┣ details_screen.dart
- ┃ ┃ ┃ ┃ ┣ edit_profile_screen.dart
- ┃ ┃ ┃ ┃ ┣ home_screen.dart
- ┃ ┃ ┃ ┃ ┣ main_screen.dart
- ┃ ┃ ┃ ┃ ┣ movie_screen.dart
- ┃ ┃ ┃ ┃ ┣ profile_screen.dart
- ┃ ┃ ┃ ┃ ┣ search_screen.dart
- ┃ ┃ ┃ ┃ ┣ settings_screen.dart
- ┃ ┃ ┃ ┃ ┗ welcome_screen.dart
- ┃ ┃ ┃ ┗ widgets
- ┃ ┃ ┃ ┃ ┣ movie_card.dart
- ┃ ┃ ┃ ┃ ┣ search_bar.dart
- ┃ ┃ ┃ ┃ ┗ watchlist_card.dart
- ┣ app.dart
- ┣ firebase_options.dart
- ┗ main.dart
+```text
+lib/
+├── core
+│   ├── constants
+│   │   └── tmdb_constants.dart
+│   ├── services
+│   │   ├── api_service.dart
+│   │   ├── connectivity_service.dart
+│   │   └── local_storage_service.dart
+│   ├── utils
+│   │   └── date_utils.dart
+│   └── widgets
+│       ├── auth_wrapper.dart
+│       ├── error_dialog.dart
+│       ├── loading_spinner.dart
+│       └── popcorn_rater.dart
+├── features
+│   ├── auth
+│   │   ├── data
+│   │   │   └── auth_service.dart
+│   │   └── presentation
+│   │       ├── login_screen.dart
+│   │       └── signup_screen.dart
+│   └── movies
+│       ├── data
+│       │   ├── datasources
+│       │   │   ├── local_data_source.dart
+│       │   │   └── remote_data_source.dart
+│       │   ├── models
+│       │   │   └── movie_model.dart
+│       │   └── repositories
+│       │       └── movie_repository.dart
+│       ├── domain
+│       │   └── entities
+│       │       └── movie.dart
+│       └── presentation
+│           ├── providers
+│           │   ├── movie_providers.dart
+│           │   ├── profile_provider.dart
+│           │   ├── search_provider.dart
+│           │   └── wishlist_provider.dart
+│           ├── screens
+│           │   ├── details_screen.dart
+│           │   ├── edit_profile_screen.dart
+│           │   ├── home_screen.dart
+│           │   ├── main_screen.dart
+│           │   ├── movie_screen.dart
+│           │   ├── profile_screen.dart
+│           │   ├── search_screen.dart
+│           │   ├── settings_screen.dart
+│           │   └── welcome_screen.dart
+│           └── widgets
+│               ├── movie_card.dart
+│               ├── search_bar.dart
+│               └── watchlist_card.dart
+├── app.dart
+├── firebase_options.dart
+└── main.dart
+```
+
+---
+
+## 📌 Notes
+
+* This project is intended for learning and portfolio purposes
+* API keys and Firebase credentials should **not** be committed to version control
+
+---
+
