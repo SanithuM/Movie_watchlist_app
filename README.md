@@ -1,4 +1,4 @@
-# 🎬 CineKeep - Movie Wishlist Application
+# 🎬 CineList - Movie Wishlist Application
 
 **CineKeep** is a cross-platform mobile application built with **Flutter** that allows users to discover new movies, rate them using a custom "Popcorn Rater," and manage a personal watchlist. The app features a modern dark-mode UI, real-time cloud synchronization, and robust offline capabilities.
 
