@@ -52,7 +52,7 @@ class WishlistNotifier extends Notifier<List<Movie>> {
     }
   }
 
-  // CRUD: Update Rating/Watched (Saves to Cloud)
+  // Update Rating/Watched (Saves to Cloud)
   Future<void> updateRating(int movieId, double newRating) async {
     state = [
       for (final movie in state)
@@ -66,7 +66,7 @@ class WishlistNotifier extends Notifier<List<Movie>> {
             voteAverage: movie.voteAverage, // Keep original TMDB rating
             releaseDate: movie.releaseDate,
             isWatched: movie.isWatched,
-            myRating: newRating, // <--- UPDATE THIS
+            myRating: newRating,
           )
         else
           movie,

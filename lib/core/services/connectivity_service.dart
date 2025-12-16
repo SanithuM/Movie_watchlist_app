@@ -2,7 +2,7 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-// 1. The Stream Provider (Fixed for version 5.0.2)
+// 1. The Stream Provider
 // This listens to the stream which returns a single 'ConnectivityResult'
 final connectivityProvider = StreamProvider<ConnectivityResult>((ref) {
   return Connectivity().onConnectivityChanged;
