@@ -6,9 +6,9 @@
 
 ## 📱 Screenshots
 
-|                          Home                         |                          Explore                         |                          Profile                         |                      Edit Profile                     |
+|                          Home                         |                          Explore                         |                          Profile                         |                      Rating                     |
 | :---------------------------------------------------: | :------------------------------------------------------: | :------------------------------------------------------: | :---------------------------------------------------: |
-| <img src="assets/screenshots/home.png" width="200" /> | <img src="assets/screenshots/explore.png" width="200" /> | <img src="assets/screenshots/profile.png" width="200" /> | <img src="assets/screenshots/edit.png" width="200" /> |
+| <img src="assets/screenshots/home.jpg" width="200" /> | <img src="assets/screenshots/explore.jpg" width="200" /> | <img src="assets/screenshots/profile.jpg" width="200" /> | <img src="assets/screenshots/rating system.jpg" width="200" /> |
 
 > Place screenshots inside `assets/screenshots/` to display them correctly.
 
@@ -95,11 +95,11 @@
 
 This is a **group project**, and responsibilities were divided as follows:
 
-| Student ID | Name          | Role / Features                                                               |
+| Name          | Role / Features                                                               |
 | ---------- | ------------- | ----------------------------------------------------------------------------- |
-| ID_1       | Member 1 Name | Identity & Accounts: Authentication, Profile Management, Image Sync, Settings |
-| ID_2       | Member 2 Name | Discovery: Trending UI, Movie Details Screen, Popcorn Rater                   |
-| ID_3       | Member 3 Name | Core Utility: Watchlist Logic, Search API Integration, CRUD Operations        |
+| Member 1 Santhush | Identity & Accounts: Authentication, Profile Management, Image Sync, Settings |
+| Member 2 Sanithu Malhiru | Discovery: Trending UI, Movie Details Screen, Popcorn Rater                   |
+| Member 3 Ashen | Core Utility: Watchlist Logic, Search API Integration, CRUD Operations        |
 
 ---
 
@@ -172,7 +172,6 @@ lib/
 ## 📌 Notes
 
 * This project is intended for learning and portfolio purposes
-* API keys and Firebase credentials should **not** be committed to version control
 
 ---
 

@@ -105,7 +105,7 @@ class ProfileScreen extends ConsumerWidget {
 
                   // NAME & EDIT BUTTON
                   Positioned(
-                    top: 230,
+                    top: 190,
                     left: 150,
                     right: 20,
                     child: Column(
@@ -152,7 +152,7 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  // Helper Methods (Same as before)
+  // Helper Methods
   Widget _buildSectionHeader(String title) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10),
