@@ -63,7 +63,7 @@ This is a **group project**, and responsibilities were divided as follows:
 
 | Name          | Role / Features                                                               |
 | ------------- | ----------------------------------------------------------------------------- |
-| Member 1 Santhush | Identity & Accounts: Authentication, Profile Management, Image Sync, Settings |
+| Member 1 Santhosh | Identity & Accounts: Authentication, Profile Management, Image Sync, Settings |
 | Member 2 Sanithu Malhiru | Discovery: Trending UI, Movie Details Screen, Popcorn Rater                   |
 | Member 3 Ashen | Core Utility: Watchlist Logic, Search API Integration, CRUD Operations        |
 
