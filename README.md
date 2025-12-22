@@ -1,5 +1,9 @@
 # 🎬 CineList — Movie Wishlist & Discovery App
 
+![Status - Active](https://img.shields.io/badge/Status-Active-brightgreen)
+![Flutter](https://img.shields.io/badge/Flutter-3.x-blue?logo=flutter)
+![State Management](https://img.shields.io/badge/State-Riverpod-blueviolet?logo=flutter)
+
 **CineList** is a cross-platform **Flutter** mobile application designed to help users discover movies, track what they want to watch, and rate films in a fun and intuitive way. The app combines a clean dark-mode UI with real-time cloud sync and offline-first support to deliver a smooth user experience.
 
 ---
@@ -10,7 +14,6 @@
 | :---------------------------------------------------: | :------------------------------------------------------: | :------------------------------------------------------: | :---------------------------------------------------: |
 | <img src="assets/screenshots/home.jpg" width="200" /> | <img src="assets/screenshots/explore.jpg" width="200" /> | <img src="assets/screenshots/profile.jpg" width="200" /> | <img src="assets/screenshots/rating system.jpg" width="200" /> |
 
-> Place screenshots inside `assets/screenshots/` to display them correctly.
 
 ---
 
@@ -54,50 +57,13 @@
 
 ---
 
-## 🚀 Getting Started
-
-### Prerequisites
-
-* Flutter SDK installed
-* TMDB API Key
-* Firebase project (Android / iOS configured)
-
-### Installation
-
-1. **Clone the repository**
-
-   ```bash
-   git clone https://github.com/YOUR_USERNAME/cinelist.git
-   cd cinelist
-   ```
-
-2. **Install dependencies**
-
-   ```bash
-   flutter pub get
-   ```
-
-3. **Firebase configuration**
-
-   * Create a project in Firebase Console
-   * Android: Add `google-services.json` to `android/app/`
-   * iOS: Add `GoogleService-Info.plist` to `ios/Runner/`
-
-4. **Run the application**
-
-   ```bash
-   flutter run
-   ```
-
----
-
 ## 👥 Team & Contributions
 
 This is a **group project**, and responsibilities were divided as follows:
 
 | Name          | Role / Features                                                               |
 | ------------- | ----------------------------------------------------------------------------- |
-| Member 1 Santhush | Identity & Accounts: Authentication, Profile Management, Image Sync, Settings |
+| Member 1 Santhosh | Identity & Accounts: Authentication, Profile Management, Image Sync, Settings |
 | Member 2 Sanithu Malhiru | Discovery: Trending UI, Movie Details Screen, Popcorn Rater                   |
 | Member 3 Ashen | Core Utility: Watchlist Logic, Search API Integration, CRUD Operations        |
 
