@@ -1,8 +1,9 @@
-//Login UI for existing users (email/password).
+// Login UI for existing users (email/password).
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/auth_service.dart';
 
+// Login screen widget
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -11,8 +12,11 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
+  // Controllers for input fields
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+
+  // UI state: loading and password visibility
   bool _isLoading = false;
   bool _obscurePassword = true;
 
@@ -24,6 +28,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _login() async {
+    // Perform login using auth service and navigate on success
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
@@ -64,6 +69,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Build login form UI
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
