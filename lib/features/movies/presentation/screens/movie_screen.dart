@@ -94,7 +94,7 @@ class MovieScreen extends ConsumerWidget {
           onTap: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => DetailScreen(movie: movie)),
+              MaterialPageRoute(builder: (context) => DetailScreen(mediaItem: movie, isMovie: true)),
             );
           },
           child: Container(

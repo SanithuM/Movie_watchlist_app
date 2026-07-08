@@ -1,4 +1,3 @@
-//Screen to edit user's profile and upload avatar/banner.
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -15,6 +14,7 @@ class EditProfileScreen extends ConsumerStatefulWidget {
 class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   late TextEditingController _nameController;
 
+  // Helper to safely parse image paths (Base64, Network, or File)
   ImageProvider? _imageProviderForPath(String? path) {
     if (path == null || path.isEmpty) return null;
     
@@ -59,102 +59,167 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           backgroundColor: Colors.black,
           appBar: AppBar(
             backgroundColor: Colors.black,
+            elevation: 0,
             leading: IconButton(
               icon: const Icon(Icons.close, color: Colors.white),
               onPressed: () => Navigator.pop(context),
             ),
-            title: const Text("Edit Profile", style: TextStyle(color: Colors.white)),
+            title: const Text("Edit Profile", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             actions: [
-              TextButton(
-                onPressed: () {
-                  profileNotifier.updateDisplayName(_nameController.text.trim());
-                  Navigator.pop(context);
-                },
-                child: const Text("SAVE", style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
+              Padding(
+                padding: const EdgeInsets.only(right: 8.0),
+                child: TextButton(
+                  onPressed: () {
+                    profileNotifier.updateDisplayName(_nameController.text.trim());
+                    Navigator.pop(context);
+                  },
+                  child: const Text("SAVE", style: TextStyle(color: Colors.amber, fontSize: 16, fontWeight: FontWeight.bold)),
+                ),
               ),
             ],
           ),
           body: SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Profile Photo Picker
-                GestureDetector(
-                  onTap: () async {
-                    await profileNotifier.pickImage(false); 
-                  },
-                  child: Row(
+                // --- VISUAL HEADER EDITOR ---
+                SizedBox(
+                  height: 240, // Tall enough to hold banner + overlapping avatar
+                  child: Stack(
+                    clipBehavior: Clip.none,
                     children: [
-                      CircleAvatar(
-                        radius: 30,
-                        backgroundColor: Colors.grey[800],
-                        backgroundImage: avatarProvider,
-                        // Show Person Icon if no image
-                        child: avatarProvider == null 
-                            ? const Icon(Icons.person, color: Colors.white) 
-                            : null,
-                      ),
-                      const SizedBox(width: 15),
-                      const Text("Choose profile photo", style: TextStyle(color: Colors.blue, fontSize: 16)),
-                    ],
-                  ),
-                ),
-                const Divider(color: Colors.grey, height: 30),
-
-                // Cover Photo Picker
-                GestureDetector(
-                  onTap: () async {
-                    await profileNotifier.pickImage(true);
-                  },
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 60,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[800],
-                          borderRadius: BorderRadius.circular(8),
-                          image: bannerProvider != null
-                              ? DecorationImage(image: bannerProvider, fit: BoxFit.cover)
-                              : null,
+                      // 1. BANNER EDITOR
+                      GestureDetector(
+                        onTap: () async {
+                          await profileNotifier.pickImage(true);
+                        },
+                        child: Container(
+                          height: 180,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[900],
+                            image: bannerProvider != null
+                                ? DecorationImage(image: bannerProvider, fit: BoxFit.cover)
+                                : null,
+                          ),
+                          // Dark overlay with Camera Icon
+                          child: Container(
+                            color: Colors.black.withOpacity(0.5),
+                            child: const Center(
+                              child: Icon(Icons.camera_alt, color: Colors.white70, size: 40),
+                            ),
+                          ),
                         ),
-                        // Show Image Icon if no image
-                        child: bannerProvider == null 
-                            ? const Icon(Icons.image, color: Colors.white) 
-                            : null,
                       ),
-                      const SizedBox(width: 15),
-                      const Text("Choose cover photo", style: TextStyle(color: Colors.blue, fontSize: 16)),
+
+                      // 2. AVATAR EDITOR
+                      Positioned(
+                        top: 120, // Overlaps the bottom edge of the banner
+                        left: 20,
+                        child: GestureDetector(
+                          onTap: () async {
+                            await profileNotifier.pickImage(false); 
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
+                              color: Colors.black, // Creates the cutout effect
+                              shape: BoxShape.circle,
+                            ),
+                            child: CircleAvatar(
+                              radius: 50,
+                              backgroundColor: Colors.grey[800],
+                              backgroundImage: avatarProvider,
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  // Show Person Icon if no image exists underneath
+                                  if (avatarProvider == null)
+                                    const Icon(Icons.person, color: Colors.white54, size: 50),
+                                  
+                                  // Dark overlay with Camera Icon
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(0.5),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Center(
+                                      child: Icon(Icons.camera_alt, color: Colors.white70, size: 30),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
-                const Divider(color: Colors.grey, height: 30),
 
-                // Display Name
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text("Display name", style: TextStyle(color: Colors.white, fontSize: 16)),
-                    TextField(
-                      controller: _nameController,
-                      style: const TextStyle(color: Colors.blue, fontSize: 18),
-                      decoration: const InputDecoration(
-                        enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
-                        focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.blue)),
+                const SizedBox(height: 16),
+
+                // --- TEXT FIELDS ---
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "Display Name",
+                        style: TextStyle(color: Colors.grey, fontSize: 14, fontWeight: FontWeight.w500),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _nameController,
+                        style: const TextStyle(color: Colors.white, fontSize: 18),
+                        cursorColor: Colors.amber,
+                        decoration: InputDecoration(
+                          hintText: "Enter your name",
+                          hintStyle: TextStyle(color: Colors.grey[600]),
+                          filled: true,
+                          fillColor: Colors.grey[900],
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Colors.amber, width: 1.5),
+                          ),
+                        ),
+                      ),
+                      
+                      const SizedBox(height: 24),
+                      
+                      const Text(
+                        "This is how you will appear to other users across CineList.",
+                        style: TextStyle(color: Colors.grey, fontSize: 13, height: 1.4),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
         ),
         
-        // Loading Overlay
+        // --- GLOBAL LOADING OVERLAY ---
+        // Prevents user from tapping anything else while image is compressing
         if (profileState.isLoading)
           Container(
-            color: Colors.black.withOpacity(0.5),
-            child: const Center(child: CircularProgressIndicator()),
+            color: Colors.black.withOpacity(0.7),
+            child: const Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(color: Colors.amber),
+                  SizedBox(height: 16),
+                  Text("Processing Image...", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                ],
+              ),
+            ),
           ),
       ],
     );

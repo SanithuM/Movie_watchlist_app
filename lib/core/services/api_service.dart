@@ -58,7 +58,44 @@ class ApiService {
     }
   }
 
-  // Add this inside ApiService
+  // TV search method
+  Future<List<dynamic>> searchTvShows(String query) async {
+    // Search TMDB for TV shows matching `query`
+    try {
+      final response = await _dio.get(
+        '/search/tv',
+        queryParameters: {'query': query.trim()},
+      );
+
+      if (response.statusCode == 200) {
+        return response.data['results'];
+      } else {
+        throw Exception('Failed to search TV shows');
+      }
+    } on DioException catch (e) {
+      throw Exception('Network Error: ${e.message}');
+    }
+  }
+
+  // Fetch full details for tv show
+
+  Future<Map<String, dynamic>> fetchTvShowDetails(String showId) async {
+    try {
+      // TMDB endpoint for full series details
+      final response = await _dio.get('/tv/$showId');
+
+      if (response.statusCode == 200) {
+        // Returning a Map here instead of a List because a specific
+        // show returns a single JSON object, not an array of results.
+        return response.data;
+      } else {
+        throw Exception('Failed to load TV show details');
+      }
+    } on DioException catch (e) {
+      throw Exception('Network Error: ${e.message}');
+    }
+  }
+
   Future<List<dynamic>> fetchNowPlayingMovies() async {
     // Get movies currently playing in theaters.
     try {

@@ -2,6 +2,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/movie_model.dart';
 import 'movie_providers.dart'; 
+import '../../../tv_shows/presentation/providers/tv_providers.dart';
+import '../../../tv_shows/domain/entities/tv_show.dart';
 
 // 1. Use Notifier instead of StateProvider
 class SearchQueryNotifier extends Notifier<String> {
@@ -32,4 +34,17 @@ final searchResultsProvider = FutureProvider.autoDispose<List<Movie>>((ref) asyn
   await Future.delayed(const Duration(milliseconds: 500));
   
   return repository.searchMovies(query);
+});
+
+// TV show search results provider
+final tvSearchResultsProvider = FutureProvider.autoDispose<List<TvShow>>((ref) async {
+  final query = ref.watch(searchQueryProvider);
+  final repository = ref.read(tvRepositoryProvider);
+
+  if (query.isEmpty) return [];
+
+  // Apply the same 500ms debounce for uniform behavior
+  await Future.delayed(const Duration(milliseconds: 500));
+
+  return repository.searchTvShows(query);
 });

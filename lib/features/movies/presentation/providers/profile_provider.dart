@@ -1,4 +1,3 @@
-//Profile state & notifier (avatar/banner, name) with Hive/Firestore sync.
 import 'dart:convert'; // Import this for Base64
 import 'dart:io';
 import 'package:flutter/foundation.dart';
@@ -9,11 +8,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../auth/data/auth_service.dart';
 
-
 class ProfileState {
   final String name;
-  final String? bannerPath; // This will now hold a huge Base64 string
-  final String? avatarPath; // This will now hold a huge Base64 string
+  final String? bannerPath; // Holds the compressed Base64 string
+  final String? avatarPath; // Holds the compressed Base64 string
   final bool isLoading;
 
   ProfileState({
@@ -97,16 +95,20 @@ class ProfileNotifier extends Notifier<ProfileState> {
     }
   }
 
-  //  Pick Image & Convert to Base64 String 
+  // Pick Image, Aggressively Compress, & Convert to Base64 String 
   Future<void> pickImage(bool isBanner) async {
     final user = _auth.currentUser;
     if (user == null) return;
 
-    // Pick Image with lower quality to save database space
+    // Set precise boundaries depending on use case to save space.
+    // Banners need width but can be shallow; avatars can be quite small squares.
+    final double targetWidth = isBanner ? 600 : 250;
+
+    // Pick Image with low quality and capped resolution constraints
     final XFile? image = await _picker.pickImage(
       source: ImageSource.gallery,
-      imageQuality: 50, // Compress image to 50% quality
-      maxWidth: 800,    // Resize width
+      imageQuality: 25,     // Downsample image quality strictly to lower file size
+      maxWidth: targetWidth, // Restrict maximum width dimension
     );
     
     if (image == null) return;
@@ -114,11 +116,20 @@ class ProfileNotifier extends Notifier<ProfileState> {
     state = state.copyWith(isLoading: true);
 
     try {
-      // 2. Convert File to Bytes, then to Base64 String
-      final bytes = await File(image.path).readAsBytes();
+      // Convert File to Bytes
+      final bytes = await image.readAsBytes();
+      
+      // Safety Validation: Ensure the data block is safely under our threshold (800KB)
+      if (bytes.length > 800000) {
+        debugPrint("Error: Highly compressed image still exceeds strict document safety budget.");
+        state = state.copyWith(isLoading: false);
+        return;
+      }
+
+      // Encode bytes down to a Base64 string representation
       String base64Image = base64Encode(bytes);
 
-      // 3. Save String to Firestore & Update State
+      // Save String to Firestore & Update State
       if (isBanner) {
         state = state.copyWith(bannerPath: base64Image, isLoading: false);
         await _firestore.collection('users').doc(user.uid).set({
@@ -139,7 +150,7 @@ class ProfileNotifier extends Notifier<ProfileState> {
 
   Future<void> deleteUserData() async {
     // Remove user data from Firestore and clear local profile box.
-     final user = _auth.currentUser;
+    final user = _auth.currentUser;
     if (user != null) {
       await _firestore.collection('users').doc(user.uid).delete();
     }

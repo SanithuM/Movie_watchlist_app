@@ -1,4 +1,3 @@
-// Movie detail screen with overview, rating, and add/update actions.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/widgets/popcorn_rater.dart'; // custom component
@@ -6,9 +5,10 @@ import '../../data/models/movie_model.dart';
 import '../providers/wishlist_provider.dart';
 
 class DetailScreen extends ConsumerStatefulWidget {
-  final Movie movie;
+  final dynamic mediaItem;
+  final bool isMovie;
 
-  const DetailScreen({super.key, required this.movie});
+  const DetailScreen({super.key, required this.mediaItem, required this.isMovie});
 
   @override
   ConsumerState<DetailScreen> createState() => _DetailScreenState();
@@ -23,7 +23,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
   void initState() {
     super.initState();
     // Initialize rating with the movie's existing rating (or default 5.0)
-    _currentRating = widget.movie.voteAverage;
+    _currentRating = widget.isMovie ? widget.mediaItem.voteAverage : widget.mediaItem.voteAverage;
   }
 
   @override
@@ -31,12 +31,12 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     // Check if this movie is in our wishlist
     final wishlist = ref.watch(wishlistProvider);
     final existingMovie = wishlist.firstWhere(
-      (m) => m.id == widget.movie.id,
-      orElse: () => widget.movie,
+      (m) => m.id == (widget.isMovie ? widget.mediaItem.id : widget.mediaItem.id),
+      orElse: () => widget.mediaItem,
     );
     
     // Check if it's actually saved
-    final isSaved = wishlist.any((m) => m.id == widget.movie.id);
+    final isSaved = wishlist.any((m) => m.id == (widget.isMovie ? widget.mediaItem.id : widget.mediaItem.id));
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -49,7 +49,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
             backgroundColor: Colors.black,
             flexibleSpace: FlexibleSpaceBar(
               title: Text(
-                widget.movie.title,
+                widget.isMovie ? widget.mediaItem.title : widget.mediaItem.name,
                 style: const TextStyle(
                   color: Colors.white,
                   shadows: [Shadow(color: Colors.black, blurRadius: 10)],
@@ -59,7 +59,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                 fit: StackFit.expand,
                 children: [
                   Image.network(
-                    widget.movie.posterPath,
+                    widget.isMovie ? widget.mediaItem.posterPath : widget.mediaItem.posterPath,
                     fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) => Container(color: Colors.grey),
                   ),
@@ -92,7 +92,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                       const Icon(Icons.calendar_today, color: Colors.grey, size: 16),
                       const SizedBox(width: 8),
                       Text(
-                        "Released: ${widget.movie.releaseDate}",
+                        "Released: ${widget.isMovie ? widget.mediaItem.releaseDate : widget.mediaItem.firstAirDate}",
                         style: const TextStyle(color: Colors.grey),
                       ),
                       const Spacer(),
@@ -112,7 +112,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    widget.movie.overview,
+                    widget.isMovie ? widget.mediaItem.overview : widget.mediaItem.overview,
                     style: const TextStyle(color: Colors.white70, fontSize: 16, height: 1.5),
                   ),
                   const SizedBox(height: 40),
@@ -164,7 +164,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                       onPressed: () {
                         if (isSaved) {
                           // UPDATE Existing
-                          ref.read(wishlistProvider.notifier).updateRating(widget.movie.id, _currentRating);
+                          ref.read(wishlistProvider.notifier).updateRating(widget.isMovie ? widget.mediaItem.id : widget.mediaItem.id, _currentRating);
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text("Rating Updated!")),
                           );
@@ -172,12 +172,12 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                           // CREATE New
                           // create a new movie object with the user's custom rating
                           final newMovie = Movie(
-                            id: widget.movie.id,
-                            title: widget.movie.title,
-                            posterPath: widget.movie.posterPath,
-                            overview: widget.movie.overview,
+                            id: widget.isMovie ? widget.mediaItem.id : widget.mediaItem.id,
+                            title: widget.isMovie ? widget.mediaItem.title : widget.mediaItem.name,
+                            posterPath: widget.isMovie ? widget.mediaItem.posterPath : widget.mediaItem.posterPath,
+                            overview: widget.isMovie ? widget.mediaItem.overview : widget.mediaItem.overview,
                             voteAverage: _currentRating, // Save the slider value!
-                            releaseDate: widget.movie.releaseDate,
+                            releaseDate: widget.isMovie ? widget.mediaItem.releaseDate : widget.mediaItem.firstAirDate,
                             isWatched: false,
                           );
                           ref.read(wishlistProvider.notifier).addMovie(newMovie);
