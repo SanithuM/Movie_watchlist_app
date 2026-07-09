@@ -32,6 +32,33 @@ class TvTimeCard extends ConsumerWidget {
         ? 0 
         : show.seasonEpisodeCounts[nextSeason - 1] - nextEpisode;
 
+    final seasonAsync = !isCompleted 
+        ? ref.watch(tvSeasonDetailsProvider('${show.id}:$nextSeason'))
+        : null;
+
+    String episodeTitle = '';
+    bool isNew = false;
+    if (seasonAsync != null && seasonAsync.hasValue) {
+      final episodes = seasonAsync.value?['episodes'] as List<dynamic>? ?? [];
+      final currentEp = episodes.firstWhere(
+        (ep) => ep['episode_number'] == nextEpisode,
+        orElse: () => null,
+      );
+      if (currentEp != null) {
+        episodeTitle = currentEp['name'] ?? '';
+        final airDateStr = currentEp['air_date'] as String?;
+        if (airDateStr != null && airDateStr.isNotEmpty) {
+          final airDate = DateTime.tryParse(airDateStr);
+          if (airDate != null) {
+            final diff = DateTime.now().difference(airDate).inDays.abs();
+            isNew = diff <= 14;
+          }
+        }
+      }
+    }
+    
+    final bool isPremiere = nextEpisode == 1;
+
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -44,34 +71,34 @@ class TvTimeCard extends ConsumerWidget {
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
         decoration: BoxDecoration(
-          color: const Color(0xFF1A1A1A),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[900]!),
+          color: Colors.black,
+          borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // 1. Left Image (Cropped)
             ClipRRect(
               borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12),
-                bottomLeft: Radius.circular(12),
+                topLeft: Radius.circular(8),
+                bottomLeft: Radius.circular(8),
               ),
               child: Image.network(
                 show.posterPath,
-                width: 110,
-                height: 110,
+                width: 95,
+                height: 125,
                 fit: BoxFit.cover,
                 alignment: Alignment.topCenter,
                 errorBuilder: (_, __, ___) => Container(
-                  width: 110,
-                  height: 110,
-                  color: Colors.grey[800],
+                  width: 95,
+                  height: 125,
+                  color: Colors.grey[900],
                   child: const Icon(Icons.tv, color: Colors.grey),
                 ),
               ),
             ),
             
-            const SizedBox(width: 12),
+            const SizedBox(width: 16),
 
             // 2. Middle Info Column
             Expanded(
@@ -83,9 +110,9 @@ class TvTimeCard extends ConsumerWidget {
                   children: [
                     // Show Title Pill
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                       decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey[700]!),
+                        border: Border.all(color: Colors.white, width: 1),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Row(
@@ -96,7 +123,7 @@ class TvTimeCard extends ConsumerWidget {
                               show.title.toUpperCase(),
                               style: const TextStyle(
                                 color: Colors.white,
-                                fontSize: 10,
+                                fontSize: 9,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 0.5,
                               ),
@@ -104,8 +131,8 @@ class TvTimeCard extends ConsumerWidget {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          const SizedBox(width: 4),
-                          const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 8),
+                          const SizedBox(width: 2),
+                          const Icon(Icons.chevron_right, color: Colors.white, size: 10),
                         ],
                       ),
                     ),
@@ -128,11 +155,66 @@ class TvTimeCard extends ConsumerWidget {
                           const SizedBox(width: 6),
                           Text(
                             '+$episodesLeft',
-                            style: const TextStyle(color: Colors.grey, fontSize: 14),
+                            style: const TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.bold),
                           ),
                         ]
                       ],
                     ),
+                    const SizedBox(height: 4),
+
+                    // Episode Title (e.g. Jer Bud)
+                    if (!isCompleted)
+                      Text(
+                        episodeTitle.isNotEmpty ? episodeTitle : 'Loading details...',
+                        style: TextStyle(
+                          color: Colors.grey[400],
+                          fontSize: 13,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    
+                    // Tags Row (PREMIERE, NEW)
+                    if (!isCompleted && (isPremiere || isNew)) ...[
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          if (isPremiere)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              margin: const EdgeInsets.only(right: 6),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Text(
+                                'PREMIERE',
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          if (isNew)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.amber,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Text(
+                                'NEW',
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -140,23 +222,35 @@ class TvTimeCard extends ConsumerWidget {
 
             // 3. Right Action Button (Checkmark)
             Padding(
-              padding: const EdgeInsets.only(right: 12.0),
-              child: IconButton(
-                icon: Icon(
-                  isCompleted ? Icons.check_circle : Icons.check_circle_outline, 
-                  color: isCompleted ? Colors.green : Colors.grey, 
-                  size: 32,
-                ),
-                onPressed: isCompleted ? null : () {
-                  // Trigger the Riverpod action to mark as watched
-                  ref.read(tvShowActionProvider.notifier).markEpisodeWatched(
-                    userId: currentUserId,
-                    showId: show.id,
-                    seasonNum: nextSeason, 
-                    episodeNum: nextEpisode,
-                  );
-                },
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: isCompleted
+                  ? const Icon(Icons.check_circle, color: Colors.green, size: 36)
+                  : GestureDetector(
+                      onTap: () {
+                        // Trigger the Riverpod action to mark as watched
+                        ref.read(tvShowActionProvider.notifier).markEpisodeWatched(
+                          userId: currentUserId,
+                          showId: show.id,
+                          seasonNum: nextSeason, 
+                          episodeNum: nextEpisode,
+                        );
+                      },
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Center(
+                          child: Icon(
+                            Icons.check,
+                            color: Colors.black,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                    ),
             ),
           ],
         ),

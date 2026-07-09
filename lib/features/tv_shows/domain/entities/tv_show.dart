@@ -7,6 +7,9 @@ class TvShow {
   final String status;
   final List<int> seasonEpisodeCounts;
   final double voteAverage;
+  final bool isFavorite;
+  final int episodeRunTime;
+  final DateTime? updatedAt;
 
   TvShow({
     required this.id,
@@ -17,5 +20,8 @@ class TvShow {
     required this.status,
     required this.seasonEpisodeCounts,
     this.voteAverage = 0.0,
+    this.isFavorite = false,
+    this.episodeRunTime = 45,
+    this.updatedAt,
   });
 }

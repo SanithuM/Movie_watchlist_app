@@ -1,5 +1,6 @@
 // Repository coordinating API + local cache for Movie data.
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/services/api_service.dart';
 import '../../../../core/services/local_storage_service.dart';
 import '../models/movie_model.dart';
@@ -83,5 +84,50 @@ class MovieRepository {
       // In a real app, return cached data when offline.
       return [];
     }
+  }
+
+  // Get real-time updates for user's movie watchlist/wishlist from Firestore
+  Stream<List<Movie>> streamUserWatchlist(String userId) {
+    return FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('wishlist')
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs
+              .map((doc) => Movie.fromJson(doc.data()))
+              .toList();
+        });
+  }
+
+  // Add a movie to the watchlist in Firestore
+  Future<void> addMovie(String userId, Movie movie) async {
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('wishlist')
+        .doc(movie.id.toString())
+        .set(movie.toJson());
+  }
+
+  // Update movie status (e.g. isWatched) in Firestore
+  Future<void> updateMovieStatus(String userId, String movieId, String status) async {
+    final isWatched = status == 'completed';
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('wishlist')
+        .doc(movieId)
+        .update({'is_watched': isWatched});
+  }
+
+  // Delete a movie from the watchlist in Firestore
+  Future<void> deleteMovie(String userId, String movieId) async {
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('wishlist')
+        .doc(movieId)
+        .delete();
   }
 }

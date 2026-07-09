@@ -17,16 +17,57 @@ class TvRemoteDataSource {
         .collection('trackedShows')
         .doc(show.id);
 
+    // Check if there are already watched episodes in the subcollection
+    final episodesSnapshot = await showRef.collection('episodes').get();
+    final int existingProgress = episodesSnapshot.docs.length;
+
+    int? lastWatchedSeason;
+    int? lastWatchedEpisode;
+    if (existingProgress > 0) {
+      // Fetch the latest watched episode to restore lastWatchedSeason and lastWatchedEpisode
+      final latestEpDocs = await showRef
+          .collection('episodes')
+          .orderBy('watchedAt', descending: true)
+          .limit(1)
+          .get();
+      if (latestEpDocs.docs.isNotEmpty) {
+        final data = latestEpDocs.docs.first.data();
+        lastWatchedSeason = data['seasonNumber'] as int?;
+        lastWatchedEpisode = data['episodeNumber'] as int?;
+      }
+    }
+
     await showRef.set({
       'id': show.id,
       'title': show.title,
       'posterPath': show.posterPath,
-      'progress': show.progress,
+      'progress': existingProgress > 0 ? existingProgress : show.progress,
       'totalEpisodes': show.totalEpisodes,
       'status': show.status,
       'seasonEpisodeCounts': show.seasonEpisodeCounts,
       'voteAverage': show.voteAverage,
+      'isFavorite': show.isFavorite,
+      'episodeRunTime': show.episodeRunTime,
+      if (lastWatchedSeason != null) 'lastWatchedSeason': lastWatchedSeason,
+      if (lastWatchedEpisode != null) 'lastWatchedEpisode': lastWatchedEpisode,
       'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> toggleFavorite({
+    required String userId,
+    required String showId,
+    required bool isFavorite,
+  }) async {
+    final showRef = _db
+        .collection('users')
+        .doc(userId)
+        .collection('trackedShows')
+        .doc(showId);
+
+    await showRef.update({
+      'isFavorite': isFavorite,
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }
@@ -96,5 +137,21 @@ class TvRemoteDataSource {
       .map((snapshot) => snapshot.docs
           .map((doc) => TvShowModel.fromFirestore(doc.id, doc.data()))
           .toList());
-}
+  }
+
+  Future<void> dropShow({
+    required String userId,
+    required String showId,
+  }) async {
+    final showRef = _db
+        .collection('users')
+        .doc(userId)
+        .collection('trackedShows')
+        .doc(showId);
+
+    await showRef.update({
+      'status': 'dropped',
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
 }

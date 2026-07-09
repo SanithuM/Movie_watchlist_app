@@ -18,4 +18,15 @@ abstract class TvRepository {
   Future<List<TvShow>> searchTvShows(String query);
 
   Future<Map<String, dynamic>> getTvShowDetails(String showId);
+
+  Future<void> toggleFavorite({
+    required String userId,
+    required String showId,
+    required bool isFavorite,
+  });
+
+  Future<void> dropShow({
+    required String userId,
+    required String showId,
+  });
 }

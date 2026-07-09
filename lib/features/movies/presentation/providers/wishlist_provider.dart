@@ -67,6 +67,7 @@ class WishlistNotifier extends Notifier<List<Movie>> {
             releaseDate: movie.releaseDate,
             isWatched: movie.isWatched,
             myRating: newRating,
+            isFavorite: movie.isFavorite,
           )
         else
           movie,
@@ -93,8 +94,25 @@ class WishlistNotifier extends Notifier<List<Movie>> {
     _syncUpdateToCloud(movieId, {'is_watched': newStatus});
   }
 
+  Future<void> toggleFavorite(int movieId) async {
+    // Find the movie to get its current status
+    final movie = state.firstWhere((m) => m.id == movieId);
+    final newStatus = !movie.isFavorite;
+
+    state = [
+      for (final m in state)
+        if (m.id == movieId)
+          _updateMovieLocally(m, isFavorite: newStatus)
+        else
+          m,
+    ];
+
+    // Sync Update to Firestore
+    _syncUpdateToCloud(movieId, {'is_favorite': newStatus});
+  }
+
   // Helper to construct new Movie object
-  Movie _updateMovieLocally(Movie m, {double? voteAverage, bool? isWatched}) {
+  Movie _updateMovieLocally(Movie m, {double? voteAverage, bool? isWatched, bool? isFavorite}) {
     return Movie(
       id: m.id,
       title: m.title,
@@ -103,6 +121,8 @@ class WishlistNotifier extends Notifier<List<Movie>> {
       voteAverage: voteAverage ?? m.voteAverage,
       releaseDate: m.releaseDate,
       isWatched: isWatched ?? m.isWatched,
+      myRating: m.myRating,
+      isFavorite: isFavorite ?? m.isFavorite,
     );
   }
 

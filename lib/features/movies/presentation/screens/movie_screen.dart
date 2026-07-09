@@ -1,7 +1,7 @@
-// Explore movies UI — shows trending and now playing lists.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/movie_providers.dart';
+import '../../../auth/data/auth_service.dart';
+import '../providers/wishlist_provider.dart';
 import '../../data/models/movie_model.dart';
 import 'details_screen.dart';
 
@@ -10,134 +10,280 @@ class MovieScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Watch both data sources
-    final trendingState = ref.watch(trendingMoviesProvider);
-    final nowPlayingState = ref.watch(nowPlayingMoviesProvider);
+    final authState = ref.watch(authStateProvider);
 
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
+    return authState.when(
+      loading: () => const Scaffold(
         backgroundColor: Colors.black,
-        automaticallyImplyLeading: false,
-        title: const Text(
-          "Explore Movies",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search, color: Colors.white),
-            onPressed: () {
-              Navigator.pushNamed(context, '/search');
-            },
-          ),
-        ],
+        body: Center(child: CircularProgressIndicator(color: Colors.white)),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: 20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // SECTION 1: NEW RELEASES
-              const Padding(
-                padding: EdgeInsets.fromLTRB(16, 20, 16, 10),
-                child: Text(
-                  "New Releases",
-                  style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-              ),
-              // Horizontal List for New Releases
-              SizedBox(
-                height: 250, // Height of the horizontal section
-                child: nowPlayingState.when(
-                  loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (e, s) => Center(child: Text("Error: $e", style: const TextStyle(color: Colors.white))),
-                  data: (movies) => _buildHorizontalMovieList(context, movies),
-                ),
-              ),
-
-              // SECTION 2: TRENDING
-              const Padding(
-                padding: EdgeInsets.fromLTRB(16, 10, 16, 10),
-                child: Text(
-                  "Trending Now",
-                  style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-              ),
-              // Horizontal List for Trending
-              SizedBox(
-                height: 250,
-                child: trendingState.when(
-                  loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (e, s) => Center(child: Text("Error: $e", style: const TextStyle(color: Colors.white))),
-                  data: (movies) => _buildHorizontalMovieList(context, movies),
-                ),
-              ),
-            ],
+      error: (error, stack) => Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(
+          child: Text(
+            'Auth error: $error',
+            style: const TextStyle(color: Colors.red),
           ),
         ),
       ),
-    );
-  }
+      data: (user) {
+        if (user == null) {
+          return const Scaffold(
+            backgroundColor: Colors.black,
+            body: Center(
+              child: Text(
+                'Sign in to view your Movie watchlist.',
+                style: TextStyle(color: Colors.grey, fontSize: 16),
+              ),
+            ),
+          );
+        }
 
-  // A helper method to build the horizontal list
-  Widget _buildHorizontalMovieList(BuildContext context, List<Movie> movies) {
-    if (movies.isEmpty) return const Center(child: Text("No movies found", style: TextStyle(color: Colors.white)));
-
-    return ListView.builder(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: movies.length,
-      itemBuilder: (context, index) {
-        final movie = movies[index];
-        return GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => DetailScreen(mediaItem: movie, isMovie: true)),
-            );
-          },
-          child: Container(
-            width: 140, // Fixed width for each card
-            margin: const EdgeInsets.only(right: 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        return DefaultTabController(
+          length: 2,
+          child: Scaffold(
+            backgroundColor: Colors.black,
+            appBar: AppBar(
+              backgroundColor: Colors.black,
+              elevation: 0,
+              automaticallyImplyLeading: false,
+              titleSpacing: 0,
+              title: const TabBar(
+                indicatorColor: Colors.white,
+                indicatorWeight: 3,
+                labelColor: Colors.white,
+                unselectedLabelColor: Colors.grey,
+                labelStyle: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                  letterSpacing: 1.2,
+                ),
+                tabs: [
+                  Tab(text: 'WATCH LIST'),
+                  Tab(text: 'UPCOMING'),
+                ],
+              ),
+            ),
+            body: TabBarView(
               children: [
-                // Poster Image
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.network(
-                    movie.posterPath,
-                    height: 200,
-                    width: 140,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(color: Colors.grey, height: 200),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                // Title
-                Text(
-                  movie.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                ),
-                // Rating
-                Row(
-                  children: [
-                    const Icon(Icons.star, color: Colors.amber, size: 14),
-                    const SizedBox(width: 4),
-                    Text(
-                      movie.voteAverage.toStringAsFixed(1),
-                      style: const TextStyle(color: Colors.grey, fontSize: 12),
-                    ),
-                  ],
-                ),
+                // TAB 1: Watch List
+                _buildWatchListTab(context, ref),
+
+                // TAB 2: Upcoming
+                _buildUpcomingTab(),
               ],
             ),
           ),
         );
       },
+    );
+  }
+
+  Widget _buildWatchListTab(BuildContext context, WidgetRef ref) {
+    final wishlist = ref.watch(wishlistProvider);
+
+    // Filter to only movies that are not watched yet
+    final remainingMovies = wishlist.where((movie) => !movie.isWatched).toList();
+
+    if (remainingMovies.isEmpty) return _buildEmptyState();
+
+    return ListView.builder(
+      padding: const EdgeInsets.only(bottom: 24, top: 12),
+      itemCount: remainingMovies.length,
+      itemBuilder: (context, index) {
+        return _MovieTimeCard(movie: remainingMovies[index]);
+      },
+    );
+  }
+
+  Widget _buildUpcomingTab() {
+    return const Center(
+      child: Text(
+        'No upcoming movies.',
+        style: TextStyle(color: Colors.grey, fontSize: 16),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: const [
+          Icon(Icons.movie_filter_outlined, size: 80, color: Colors.grey),
+          SizedBox(height: 16),
+          Text(
+            "No movies added yet!",
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
+            "Search and add movies to your wishlist.",
+            style: TextStyle(color: Colors.grey, fontSize: 16),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MovieTimeCard extends ConsumerWidget {
+  final Movie movie;
+
+  const _MovieTimeCard({
+    required this.movie,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => DetailScreen(mediaItem: movie, isMovie: true),
+          ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
+        decoration: BoxDecoration(
+          color: Colors.black,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // 1. Left Image (Cropped)
+            ClipRRect(
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(8),
+                bottomLeft: Radius.circular(8),
+              ),
+              child: Image.network(
+                movie.posterPath,
+                width: 95,
+                height: 125,
+                fit: BoxFit.cover,
+                alignment: Alignment.topCenter,
+                errorBuilder: (_, __, ___) => Container(
+                  width: 95,
+                  height: 125,
+                  color: Colors.grey[900],
+                  child: const Icon(Icons.movie, color: Colors.grey),
+                ),
+              ),
+            ),
+            
+            const SizedBox(width: 16),
+
+            // 2. Middle Info Column
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Movie Title Pill
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.white, width: 1),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              movie.title.toUpperCase(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 2),
+                          const Icon(Icons.chevron_right, color: Colors.white, size: 10),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    
+                    // Release Date or Rating info
+                    Row(
+                      children: [
+                        const Icon(Icons.star, color: Colors.amber, size: 16),
+                        const SizedBox(width: 4),
+                        Text(
+                          movie.voteAverage.toStringAsFixed(1),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+
+                    // Release Date
+                    Text(
+                      movie.releaseDate.isNotEmpty ? 'Released: ${movie.releaseDate}' : 'Release Date Unknown',
+                      style: TextStyle(
+                        color: Colors.grey[400],
+                        fontSize: 13,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // 3. Right Action Button (Checkmark)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: movie.isWatched
+                  ? const Icon(Icons.check_circle, color: Colors.green, size: 36)
+                  : GestureDetector(
+                      onTap: () {
+                        // Toggle watched status
+                        ref.read(wishlistProvider.notifier).toggleWatched(movie.id);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('"${movie.title}" marked as watched!')),
+                        );
+                      },
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Center(
+                          child: Icon(
+                            Icons.check,
+                            color: Colors.black,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                    ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

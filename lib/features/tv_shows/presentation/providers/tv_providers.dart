@@ -4,6 +4,7 @@ import '../../data/datasources/tv_remote_data_source.dart';
 import '../../data/repositories/tv_repository_impl.dart';
 import '../../domain/repositories/tv_repository.dart';
 import '../../domain/entities/tv_show.dart';
+import '../../../../core/services/api_service.dart';
 
 // --- 1. Dependency Injection ---
 // These providers ensure you only instantiate your Firebase and Repo classes once.
@@ -30,6 +31,14 @@ final tvWatchlistProvider = StreamProvider.family<List<TvShow>, String>((ref, us
 final tvShowDetailsProvider = FutureProvider.family.autoDispose<Map<String, dynamic>, String>((ref, showId) async {
   final repository = ref.watch(tvRepositoryProvider);
   return repository.getTvShowDetails(showId);
+});
+
+final tvSeasonDetailsProvider = FutureProvider.family.autoDispose<Map<String, dynamic>, String>((ref, param) async {
+  final parts = param.split(':');
+  final showId = parts[0];
+  final seasonNum = int.parse(parts[1]);
+  final apiService = ref.watch(apiServiceProvider);
+  return apiService.fetchTvSeasonDetails(showId, seasonNum);
 });
 
 // --- 2. Action State Notifier ---
@@ -71,6 +80,42 @@ class TvShowActionNotifier extends AsyncNotifier<void> {
         showId: showId,
         seasonNum: seasonNum,
         episodeNum: episodeNum,
+      );
+      state = const AsyncData(null);
+    } catch (e, stackTrace) {
+      state = AsyncError(e, stackTrace);
+    }
+  }
+
+  Future<void> toggleFavorite({
+    required String userId,
+    required String showId,
+    required bool currentStatus,
+  }) async {
+    state = const AsyncLoading();
+
+    try {
+      await ref.read(tvRepositoryProvider).toggleFavorite(
+        userId: userId,
+        showId: showId,
+        isFavorite: !currentStatus,
+      );
+      state = const AsyncData(null);
+    } catch (e, stackTrace) {
+      state = AsyncError(e, stackTrace);
+    }
+  }
+
+  Future<void> dropShow({
+    required String userId,
+    required String showId,
+  }) async {
+    state = const AsyncLoading();
+
+    try {
+      await ref.read(tvRepositoryProvider).dropShow(
+        userId: userId,
+        showId: showId,
       );
       state = const AsyncData(null);
     } catch (e, stackTrace) {

@@ -40,12 +40,16 @@ class ApiService {
     }
   }
 
-  Future<List<dynamic>> searchMovies(String query) async {
+  Future<List<dynamic>> searchMovies(String query, {String? year}) async {
     // Search TMDB for movies matching `query`.
     try {
       final response = await _dio.get(
         '/search/movie',
-        queryParameters: {'query': query}, // Pass the user's search text
+        queryParameters: {
+          'query': query.trim(),
+          if (year != null && year.trim().isNotEmpty)
+            'primary_release_year': year.trim(),
+        }, // Pass the user's search text
       );
 
       if (response.statusCode == 200) {
@@ -59,12 +63,16 @@ class ApiService {
   }
 
   // TV search method
-  Future<List<dynamic>> searchTvShows(String query) async {
+  Future<List<dynamic>> searchTvShows(String query, {String? year}) async {
     // Search TMDB for TV shows matching `query`
     try {
       final response = await _dio.get(
         '/search/tv',
-        queryParameters: {'query': query.trim()},
+        queryParameters: {
+          'query': query.trim(),
+          if (year != null && year.trim().isNotEmpty)
+            'first_air_date_year': year.trim(),
+        },
       );
 
       if (response.statusCode == 200) {
@@ -90,6 +98,19 @@ class ApiService {
         return response.data;
       } else {
         throw Exception('Failed to load TV show details');
+      }
+    } on DioException catch (e) {
+      throw Exception('Network Error: ${e.message}');
+    }
+  }
+
+  Future<Map<String, dynamic>> fetchTvSeasonDetails(String showId, int seasonNum) async {
+    try {
+      final response = await _dio.get('/tv/$showId/season/$seasonNum');
+      if (response.statusCode == 200) {
+        return response.data;
+      } else {
+        throw Exception('Failed to load TV season details');
       }
     } on DioException catch (e) {
       throw Exception('Network Error: ${e.message}');

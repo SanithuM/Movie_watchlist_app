@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/widgets/popcorn_rater.dart'; // custom component
 import '../../data/models/movie_model.dart';
 import '../providers/wishlist_provider.dart';
+import '../providers/custom_lists_provider.dart';
 
 class DetailScreen extends ConsumerStatefulWidget {
   final dynamic mediaItem;
@@ -26,6 +27,152 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     _currentRating = widget.isMovie ? widget.mediaItem.voteAverage : widget.mediaItem.voteAverage;
   }
 
+  void _showAddToListSheet(
+    BuildContext context,
+    WidgetRef ref,
+    String itemId,
+    String title,
+    String posterPath,
+    String type,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.grey[900],
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return Consumer(
+          builder: (context, ref, _) {
+            final listsAsync = ref.watch(customListsProvider);
+            return listsAsync.when(
+              data: (lists) {
+                if (lists.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          "You don't have any custom lists yet.",
+                          style: TextStyle(color: Colors.white, fontSize: 16),
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            _showCreateListDialog(context, ref);
+                          },
+                          child: const Text("Create a List"),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                return Container(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              "Add to List",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.add, color: Colors.white),
+                              onPressed: () {
+                                Navigator.pop(context);
+                                _showCreateListDialog(context, ref);
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Divider(color: Colors.grey),
+                      Flexible(
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: lists.length,
+                          itemBuilder: (context, index) {
+                            final list = lists[index];
+                            final isInList = list.items.any((item) => item.id == itemId && item.type == type);
+                            return CheckboxListTile(
+                              title: Text(list.name, style: const TextStyle(color: Colors.white)),
+                              value: isInList,
+                              activeColor: Colors.amber,
+                              checkColor: Colors.black,
+                              onChanged: (value) async {
+                                await ref.read(customListsProvider.notifier).toggleItemInList(
+                                      listId: list.id,
+                                      itemId: itemId,
+                                      title: title,
+                                      posterPath: posterPath,
+                                      type: type,
+                                    );
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (err, stack) => Center(child: Text("Error: $err", style: const TextStyle(color: Colors.red))),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showCreateListDialog(BuildContext context, WidgetRef ref) {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.grey[900],
+          title: const Text("Create New List", style: TextStyle(color: Colors.white)),
+          content: TextField(
+            controller: controller,
+            style: const TextStyle(color: Colors.white),
+            decoration: const InputDecoration(
+              hintText: "Enter list name",
+              hintStyle: TextStyle(color: Colors.grey),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel", style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final name = controller.text.trim();
+                if (name.isNotEmpty) {
+                  await ref.read(customListsProvider.notifier).createList(name);
+                  if (context.mounted) Navigator.pop(context);
+                }
+              },
+              child: const Text("Create"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // Check if this movie is in our wishlist
@@ -47,6 +194,53 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
             expandedHeight: 400.0,
             pinned: true,
             backgroundColor: Colors.black,
+            actions: [
+              IconButton(
+                icon: Icon(
+                  isSaved && existingMovie.isFavorite ? Icons.favorite : Icons.favorite_border,
+                  color: isSaved && existingMovie.isFavorite ? Colors.red : Colors.white,
+                ),
+                onPressed: () {
+                  if (!isSaved) {
+                    // Create movie with isFavorite = true
+                    final newMovie = Movie(
+                      id: widget.mediaItem.id,
+                      title: widget.mediaItem.title,
+                      posterPath: widget.mediaItem.posterPath,
+                      overview: widget.mediaItem.overview,
+                      voteAverage: widget.mediaItem.voteAverage,
+                      releaseDate: widget.mediaItem.releaseDate ?? '',
+                      isWatched: false,
+                      isFavorite: true,
+                    );
+                    ref.read(wishlistProvider.notifier).addMovie(newMovie);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Added to Favorites!")),
+                    );
+                  } else {
+                    ref.read(wishlistProvider.notifier).toggleFavorite(existingMovie.id);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(existingMovie.isFavorite
+                            ? "Removed from Favorites"
+                            : "Added to Favorites!"),
+                      ),
+                    );
+                  }
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.playlist_add, color: Colors.white),
+                onPressed: () => _showAddToListSheet(
+                  context,
+                  ref,
+                  widget.mediaItem.id.toString(),
+                  widget.isMovie ? widget.mediaItem.title : widget.mediaItem.name,
+                  widget.mediaItem.posterPath,
+                  'movie',
+                ),
+              ),
+            ],
             flexibleSpace: FlexibleSpaceBar(
               title: Text(
                 widget.isMovie ? widget.mediaItem.title : widget.mediaItem.name,

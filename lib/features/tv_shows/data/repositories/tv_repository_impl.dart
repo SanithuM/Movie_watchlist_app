@@ -42,7 +42,9 @@ class TvRepositoryImpl implements TvRepository {
 
   @override
   Stream<List<TvShow>> getUserWatchlist(String userId) {
-    return remoteDataSource.getUserWatchlist(userId);
+    return remoteDataSource.getUserWatchlist(userId).map(
+          (list) => List<TvShow>.from(list),
+        );
   }
 
 @override
@@ -71,9 +73,35 @@ Future<Map<String, dynamic>> getTvShowDetails(String showId) async {
             : 'https://via.placeholder.com/200x300',
         progress: 0,
         totalEpisodes: 0,
-        status: 'search result', seasonEpisodeCounts: [],
+        status: 'search result',
+        seasonEpisodeCounts: [],
         voteAverage: (data['vote_average'] ?? 0.0).toDouble(),
+        episodeRunTime: 45,
       );
     }).toList();
+  }
+
+  @override
+  Future<void> toggleFavorite({
+    required String userId,
+    required String showId,
+    required bool isFavorite,
+  }) async {
+    return await remoteDataSource.toggleFavorite(
+      userId: userId,
+      showId: showId,
+      isFavorite: isFavorite,
+    );
+  }
+
+  @override
+  Future<void> dropShow({
+    required String userId,
+    required String showId,
+  }) async {
+    return await remoteDataSource.dropShow(
+      userId: userId,
+      showId: showId,
+    );
   }
 }
