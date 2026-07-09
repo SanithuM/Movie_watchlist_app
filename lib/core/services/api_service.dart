@@ -130,6 +130,19 @@ class ApiService {
       throw Exception('Network Error: ${e.message}');
     }
   }
+
+  Future<List<dynamic>> fetchTrendingTvShows() async {
+    try {
+      final response = await _dio.get('/trending/tv/week');
+      if (response.statusCode == 200) {
+        return response.data['results'];
+      } else {
+        throw Exception('Failed to load trending TV shows');
+      }
+    } on DioException catch (e) {
+      throw Exception('Network Error: ${e.message}');
+    }
+  }
 }
 
 // RIVERPOD PROVIDER

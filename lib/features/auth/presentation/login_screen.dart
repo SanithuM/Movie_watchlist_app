@@ -1,9 +1,7 @@
-// Login UI for existing users (email/password).
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/auth_service.dart';
 
-// Login screen widget
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -12,11 +10,9 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  // Controllers for input fields
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  // UI state: loading and password visibility
   bool _isLoading = false;
   bool _obscurePassword = true;
 
@@ -28,7 +24,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _login() async {
-    // Perform login using auth service and navigate on success
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
@@ -69,90 +64,105 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Build login form UI
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: const Color(0xFF0F0F0F),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(18.0),
-          child: Center(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                const SizedBox(height: 20),
                 const Text(
-                  'Welcome Back',
+                  'Log In',
                   style: TextStyle(
-                    fontSize: 34,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 32,
+                    fontWeight: FontWeight.w900,
                     color: Colors.white,
+                    letterSpacing: -0.5,
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Text(
-                      'Don\'t have an account?',
+                      "Don't have an account? ",
                       style: TextStyle(
                         fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                        color: Colors.white,
+                        color: Colors.white70,
                       ),
                     ),
-                    TextButton(
-                      onPressed: () {
+                    GestureDetector(
+                      onTap: () {
                         Navigator.pushNamed(context, '/signup');
                       },
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        minimumSize: const Size(50, 24),
-                      ),
                       child: const Text(
-                        ' Sign up',
+                        'Sign up',
                         style: TextStyle(
                           fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF2F6BFF),
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFFFFD200),
                         ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 36),
+
+                // Email field
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
                     labelText: 'Email',
-                    labelStyle: const TextStyle(color: Colors.white),
+                    labelStyle: const TextStyle(color: Colors.white70),
+                    floatingLabelStyle: const TextStyle(color: Color(0xFFFFD200)),
+                    filled: true,
+                    fillColor: const Color(0xFF1E1E1E),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide.none,
                     ),
-                    fillColor: const Color.fromARGB(255, 93, 93, 110),
-                    filled: true,
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: Color(0xFFFFD200), width: 1.5),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),
+
+                // Password field
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
                     labelText: 'Password',
-                    labelStyle: const TextStyle(color: Colors.white),
+                    labelStyle: const TextStyle(color: Colors.white70),
+                    floatingLabelStyle: const TextStyle(color: Color(0xFFFFD200)),
+                    filled: true,
+                    fillColor: const Color(0xFF1E1E1E),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide.none,
                     ),
-                    fillColor: const Color.fromARGB(255, 93, 93, 110),
-                    filled: true,
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: Color(0xFFFFD200), width: 1.5),
+                    ),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _obscurePassword
-                            ? Icons.visibility
-                            : Icons.visibility_off,
+                        _obscurePassword ? Icons.visibility : Icons.visibility_off,
                         color: Colors.white70,
                       ),
                       onPressed: () {
@@ -163,30 +173,33 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 30),
+                const SizedBox(height: 40),
+
+                // Login Button
                 SizedBox(
                   width: double.infinity,
                   height: 54,
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _login,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2F6BFF),
+                      backgroundColor: const Color(0xFFFFD200),
+                      foregroundColor: Colors.black,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(28),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      disabledBackgroundColor: const Color(
-                        0xFF2F6BFF,
-                      ).withOpacity(0.5),
+                      disabledBackgroundColor: const Color(0xFFFFD200).withValues(alpha: 0.5),
                     ),
                     child: _isLoading
                         ? const CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
                           )
                         : const Text(
-                            'Login',
-                            style: TextStyle(fontSize: 18, color: Colors.white),
+                            'LOG IN',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.0,
+                            ),
                           ),
                   ),
                 ),

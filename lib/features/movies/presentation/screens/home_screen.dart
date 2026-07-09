@@ -4,6 +4,7 @@ import '../../../auth/data/auth_service.dart';
 import '../../../tv_shows/presentation/providers/tv_providers.dart';
 import '../../../tv_shows/presentation/widgets/tv_time_card.dart';
 import '../../../tv_shows/domain/entities/tv_show.dart';
+import '../../../tv_shows/presentation/screens/tv_detail_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -69,8 +70,8 @@ class HomeScreen extends ConsumerWidget {
                 // TAB 1: Watch List
                 _buildWatchListTab(context, ref, user.uid),
 
-                // TAB 2: Upcoming (Empty State for now)
-                _buildUpcomingTab(),
+                // TAB 2: Upcoming
+                _buildUpcomingTab(context, ref, user.uid),
               ],
             ),
           ),
@@ -84,8 +85,8 @@ class HomeScreen extends ConsumerWidget {
     WidgetRef ref,
     String currentUserId,
   ) {
-    // Watch your Firestore stream provider
-    final watchlistAsync = ref.watch(tvWatchlistProvider(currentUserId));
+    // Watch your sorted Firestore/TMDB provider
+    final watchlistAsync = ref.watch(tvSortedWatchlistProvider(currentUserId));
 
     return watchlistAsync.when(
       loading: () => const Center(
@@ -350,11 +351,346 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildUpcomingTab() {
-    return const Center(
-      child: Text(
-        'No upcoming episodes.',
-        style: TextStyle(color: Colors.grey, fontSize: 16),
+  Widget _buildUpcomingTab(BuildContext context, WidgetRef ref, String currentUserId) {
+    final upcomingAsync = ref.watch(tvUpcomingEpisodesProvider(currentUserId));
+
+    return upcomingAsync.when(
+      loading: () => const Center(
+        child: CircularProgressIndicator(color: Colors.white),
+      ),
+      error: (err, stack) => Center(
+        child: Text(
+          'Error loading upcoming episodes: $err',
+          style: const TextStyle(color: Colors.red),
+        ),
+      ),
+      data: (episodes) {
+        if (episodes.isEmpty) {
+          return const Center(
+            child: Text(
+              'No upcoming episodes.',
+              style: TextStyle(color: Colors.grey, fontSize: 16),
+            ),
+          );
+        }
+
+        // Group the episodes by airDate/label
+        final Map<String, List<UpcomingEpisode>> groupedEpisodes = {};
+        final List<String> groupOrder = [];
+
+        String formatAirDate(DateTime date) {
+          const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+          return "${months[date.month - 1]} ${date.day}, ${date.year}";
+        }
+
+        String getDayName(DateTime date) {
+          const days = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
+          return days[date.weekday - 1];
+        }
+
+        String getGroupLabel(DateTime date) {
+          final now = DateTime.now();
+          final today = DateTime(now.year, now.month, now.day);
+          final epDate = DateTime(date.year, date.month, date.day);
+          
+          final difference = epDate.difference(today).inDays;
+          
+          if (difference <= 0) {
+            return formatAirDate(epDate);
+          } else if (difference < 7) {
+            return getDayName(epDate);
+          } else {
+            return 'LATER';
+          }
+        }
+
+        for (final ep in episodes) {
+          final label = getGroupLabel(ep.airDate);
+          if (!groupedEpisodes.containsKey(label)) {
+            groupedEpisodes[label] = [];
+            groupOrder.add(label);
+          }
+          groupedEpisodes[label]!.add(ep);
+        }
+
+        final listItems = <Widget>[];
+
+        for (final label in groupOrder) {
+          listItems.add(
+            Center(
+              child: Container(
+                margin: const EdgeInsets.symmetric(vertical: 16.0),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2E2E2E),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+            ),
+          );
+
+          final sectionEpisodes = groupedEpisodes[label]!;
+          for (final ep in sectionEpisodes) {
+            listItems.add(_buildUpcomingCard(context, ref, currentUserId, ep, label == 'LATER'));
+          }
+        }
+
+        return ListView(
+          padding: const EdgeInsets.only(bottom: 24),
+          children: listItems,
+        );
+      },
+    );
+  }
+
+  Widget _buildUpcomingCard(
+    BuildContext context,
+    WidgetRef ref,
+    String currentUserId,
+    UpcomingEpisode ep,
+    bool isLater,
+  ) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final daysDifference = ep.airDate.difference(today).inDays;
+
+    final isPremiere = ep.episodeNumber == 1;
+    final isNew = ep.isAired; 
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => TvDetailScreen(show: ep.show),
+          ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0F0F0F),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            ClipRRect(
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(8),
+                bottomLeft: Radius.circular(8),
+              ),
+              child: Image.network(
+                ep.show.posterPath,
+                width: 95,
+                height: 125,
+                fit: BoxFit.cover,
+                alignment: Alignment.topCenter,
+                errorBuilder: (_, __, ___) => Container(
+                  width: 95,
+                  height: 125,
+                  color: Colors.grey[900],
+                  child: const Icon(Icons.tv, color: Colors.grey),
+                ),
+              ),
+            ),
+            
+            const SizedBox(width: 16),
+
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.white54, width: 1),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              ep.show.title.toUpperCase(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 2),
+                          const Icon(Icons.chevron_right, color: Colors.white54, size: 10),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+
+                    Text(
+                      'S${ep.seasonNumber.toString().padLeft(2, '0')} | E${ep.episodeNumber.toString().padLeft(2, '0')}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+
+                    Text(
+                      ep.episodeTitle,
+                      style: TextStyle(
+                        color: Colors.grey[400],
+                        fontSize: 13,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+
+                    if (isPremiere || isNew) ...[
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          if (isPremiere)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              margin: const EdgeInsets.only(right: 6),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Text(
+                                'PREMIERE',
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          if (isNew)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.amber,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Text(
+                                'NEW',
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: ep.isAired
+                  ? GestureDetector(
+                      onTap: () {
+                        ref.read(tvShowActionProvider.notifier).markEpisodeWatched(
+                          userId: currentUserId,
+                          showId: ep.show.id,
+                          seasonNum: ep.seasonNumber,
+                          episodeNum: ep.episodeNumber,
+                        );
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              '${ep.show.title} S${ep.seasonNumber}E${ep.episodeNumber} marked as watched!',
+                            ),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Center(
+                          child: Icon(
+                            Icons.check,
+                            color: Colors.black,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                    )
+                  : isLater
+                      ? Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text(
+                              '$daysDifference',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const Text(
+                              'DAYS',
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        )
+                      : Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              ep.airTime,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              ep.network,
+                              style: const TextStyle(
+                                color: Colors.grey,
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+            ),
+          ],
+        ),
       ),
     );
   }
