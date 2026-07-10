@@ -8,7 +8,6 @@ import '../providers/wishlist_provider.dart';
 import '../providers/profile_provider.dart';
 import '../providers/custom_lists_provider.dart';
 import 'details_screen.dart';
-import 'import_screen.dart';
 import 'settings_screen.dart';
 import 'edit_profile_screen.dart';
 import 'list_detail_screen.dart';
@@ -190,7 +189,12 @@ class ProfileScreen extends ConsumerWidget {
 
     // Fetch Movie Data
     final movieWishlist = ref.watch(wishlistProvider);
-    final watchedMovies = movieWishlist.where((m) => m.isWatched).toList();
+    final watchedMovies = movieWishlist.where((m) => m.isWatched).toList()
+      ..sort((a, b) {
+        final aTime = a.watchedAt ?? DateTime(1970);
+        final bTime = b.watchedAt ?? DateTime(1970);
+        return bTime.compareTo(aTime);
+      });
     final favoriteMovies = movieWishlist.where((m) => m.isFavorite).toList();
 
     // Fetch TV Show Data
@@ -248,11 +252,11 @@ class ProfileScreen extends ConsumerWidget {
           children: [
             // --- HEADER (BANNER & AVATAR) ---
             SizedBox(
-              height: 280,
+              height: 235,
               child: Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  // BANNER
+                  // BANNER with dark gradient overlay
                   Container(
                     height: 200,
                     width: double.infinity,
@@ -265,22 +269,31 @@ class ProfileScreen extends ConsumerWidget {
                             )
                           : null,
                     ),
-                    child: bannerProvider != null
-                        ? Container(
-                            color: Colors.black.withOpacity(0.3),
-                          )
-                        : null,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.black.withOpacity(0.4),
+                            Colors.black.withOpacity(0.1),
+                            Colors.black.withOpacity(0.8),
+                          ],
+                          stops: const [0.0, 0.5, 1.0],
+                        ),
+                      ),
+                    ),
                   ),
 
-                  // SETTINGS ICON
+                  // SETTINGS ICON (Three dots menu)
                   Positioned(
                     top: 50,
                     right: 16,
                     child: IconButton(
                       icon: const Icon(
-                        Icons.settings,
+                        Icons.more_horiz,
                         color: Colors.white,
-                        size: 28,
+                        size: 32,
                       ),
                       onPressed: () {
                         Navigator.push(
@@ -301,21 +314,21 @@ class ProfileScreen extends ConsumerWidget {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        // Avatar Circle
+                        // Avatar Circle with thick white border
                         Container(
-                          padding: const EdgeInsets.all(4),
+                          padding: const EdgeInsets.all(3),
                           decoration: const BoxDecoration(
-                            color: Colors.black,
+                            color: Colors.white,
                             shape: BoxShape.circle,
                           ),
                           child: CircleAvatar(
-                            radius: 50,
+                            radius: 36,
                             backgroundColor: Colors.grey[800],
                             backgroundImage: avatarProvider,
                             child: avatarProvider == null
                                 ? const Icon(
                                     Icons.person,
-                                    size: 50,
+                                    size: 36,
                                     color: Colors.white54,
                                   )
                                 : null,
@@ -323,28 +336,29 @@ class ProfileScreen extends ConsumerWidget {
                         ),
                         const SizedBox(width: 16),
 
-                        // Name & Edit Button
+                        // Name & EDIT Button
                         Expanded(
                           child: Padding(
                             padding: const EdgeInsets.only(
-                              bottom: 12.0,
+                              bottom: 8.0,
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
                                   profileState.name,
                                   style: const TextStyle(
                                     color: Colors.white,
-                                    fontSize: 24,
+                                    fontSize: 22,
                                     fontWeight: FontWeight.bold,
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
-                                const SizedBox(height: 8),
+                                const SizedBox(height: 6),
                                 SizedBox(
-                                  height: 32,
+                                  height: 30,
                                   child: OutlinedButton(
                                     onPressed: () {
                                       Navigator.push(
@@ -357,15 +371,25 @@ class ProfileScreen extends ConsumerWidget {
                                     },
                                     style: OutlinedButton.styleFrom(
                                       foregroundColor: Colors.white,
-                                      side: BorderSide(
-                                        color: Colors.grey[600]!,
+                                      side: const BorderSide(
+                                        color: Colors.white,
+                                        width: 1.5,
                                       ),
+                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
                                       shape: RoundedRectangleBorder(
                                         borderRadius:
                                             BorderRadius.circular(20),
                                       ),
                                     ),
-                                    child: const Text('Edit'),
+                                    child: const Text(
+                                      'EDIT',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                        letterSpacing: 1.0,
+                                        color: Colors.white,
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ],
@@ -381,7 +405,7 @@ class ProfileScreen extends ConsumerWidget {
 
             // --- TV TIME STYLE STATS SECTION ---
             Padding(
-              padding: const EdgeInsets.only(top: 16.0, bottom: 24.0),
+              padding: const EdgeInsets.only(top: 0.0, bottom: 24.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -450,39 +474,7 @@ class ProfileScreen extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey[900],
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.grey[800]!),
-                      ),
-                      child: ListTile(
-                        leading: const Icon(
-                          Icons.import_export,
-                          color: Colors.white,
-                        ),
-                        title: const Text(
-                          'Import TV Time Data',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                        trailing: const Icon(
-                          Icons.chevron_right,
-                          color: Colors.grey,
-                        ),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const ImportScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
+
                 ],
               ),
             ),

@@ -154,4 +154,189 @@ class TvRemoteDataSource {
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }
+
+  Future<void> unmarkEpisodeAsWatched({
+    required String userId,
+    required String showId,
+    required int seasonNum,
+    required int episodeNum,
+  }) async {
+    final batch = _db.batch();
+
+    final showRef = _db
+        .collection('users')
+        .doc(userId)
+        .collection('trackedShows')
+        .doc(showId);
+
+    final episodeId = 'S${seasonNum}E$episodeNum';
+    final episodeRef = showRef.collection('episodes').doc(episodeId);
+
+    batch.delete(episodeRef);
+
+    batch.set(showRef, {
+      'progress': FieldValue.increment(-1),
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+
+    try {
+      await batch.commit();
+    } catch (e) {
+      throw Exception('Failed to unmark episode as watched: $e');
+    }
+  }
+
+  Future<void> toggleSeasonWatched({
+    required String userId,
+    required String showId,
+    required int seasonNum,
+    required int totalEpisodesInSeason,
+    required List<String> watchedEpisodeIds,
+  }) async {
+    final showRef = _db
+        .collection('users')
+        .doc(userId)
+        .collection('trackedShows')
+        .doc(showId);
+
+    final episodesCollection = showRef.collection('episodes');
+
+    // Find which episodes of this season are currently watched
+    final seasonWatchedPrefix = 'S${seasonNum}E';
+    final seasonWatchedDocs = watchedEpisodeIds.where((id) => id.startsWith(seasonWatchedPrefix)).toList();
+
+    final bool isFullyWatched = seasonWatchedDocs.length == totalEpisodesInSeason;
+
+    final batch = _db.batch();
+
+    int progressDelta = 0;
+
+    if (isFullyWatched) {
+      // Mark all as unwatched: delete all watched docs for this season
+      for (final epId in seasonWatchedDocs) {
+        batch.delete(episodesCollection.doc(epId));
+      }
+      progressDelta = -totalEpisodesInSeason;
+    } else {
+      // Mark all as watched: add docs for all episodes in this season
+      for (int i = 1; i <= totalEpisodesInSeason; i++) {
+        final epId = 'S${seasonNum}E$i';
+        if (!watchedEpisodeIds.contains(epId)) {
+          batch.set(episodesCollection.doc(epId), {
+            'seasonNumber': seasonNum,
+            'episodeNumber': i,
+            'watchedAt': FieldValue.serverTimestamp(),
+          });
+          progressDelta++;
+        }
+      }
+    }
+
+    batch.set(showRef, {
+      'progress': FieldValue.increment(progressDelta),
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+
+    try {
+      await batch.commit();
+    } catch (e) {
+      throw Exception('Failed to toggle season watched: $e');
+    }
+  }
+
+  Future<void> toggleAllEpisodesWatched({
+    required String userId,
+    required String showId,
+    required List<Map<String, dynamic>> seasonsList,
+    required List<String> watchedEpisodeIds,
+  }) async {
+    final showRef = _db
+        .collection('users')
+        .doc(userId)
+        .collection('trackedShows')
+        .doc(showId);
+
+    final episodesCollection = showRef.collection('episodes');
+
+    // Calculate total episodes across all seasons
+    int totalEpisodes = 0;
+    for (final s in seasonsList) {
+      totalEpisodes += (s['episode_count'] as int? ?? 0);
+    }
+
+    final bool isFullyWatched = watchedEpisodeIds.length == totalEpisodes;
+
+    final batch = _db.batch();
+
+    int progressDelta = 0;
+
+    if (isFullyWatched) {
+      // Mark all as unwatched: delete all watched docs
+      for (final epId in watchedEpisodeIds) {
+        batch.delete(episodesCollection.doc(epId));
+      }
+      progressDelta = -watchedEpisodeIds.length;
+    } else {
+      // Mark all as watched: add docs for all episodes in all seasons
+      for (final s in seasonsList) {
+        final seasonNum = s['season_number'] as int? ?? 0;
+        final episodeCount = s['episode_count'] as int? ?? 0;
+        for (int i = 1; i <= episodeCount; i++) {
+          final epId = 'S${seasonNum}E$i';
+          if (!watchedEpisodeIds.contains(epId)) {
+            batch.set(episodesCollection.doc(epId), {
+              'seasonNumber': seasonNum,
+              'episodeNumber': i,
+              'watchedAt': FieldValue.serverTimestamp(),
+            });
+            progressDelta++;
+          }
+        }
+      }
+    }
+
+    batch.set(showRef, {
+      'progress': FieldValue.increment(progressDelta),
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+
+    try {
+      await batch.commit();
+    } catch (e) {
+      throw Exception('Failed to toggle all episodes watched: $e');
+    }
+  }
+
+  Future<void> resetShowProgress({
+    required String userId,
+    required String showId,
+    required List<String> watchedEpisodeIds,
+  }) async {
+    final showRef = _db
+        .collection('users')
+        .doc(userId)
+        .collection('trackedShows')
+        .doc(showId);
+
+    final episodesCollection = showRef.collection('episodes');
+
+    final batch = _db.batch();
+
+    for (final epId in watchedEpisodeIds) {
+      batch.delete(episodesCollection.doc(epId));
+    }
+
+    batch.set(showRef, {
+      'progress': 0,
+      'lastWatchedSeason': FieldValue.delete(),
+      'lastWatchedEpisode': FieldValue.delete(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+
+    try {
+      await batch.commit();
+    } catch (e) {
+      throw Exception('Failed to reset show progress: $e');
+    }
+  }
 }

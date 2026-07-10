@@ -32,6 +32,41 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     return file.existsSync() ? FileImage(file) : null;
   }
 
+  void _showImagePickerOptions(BuildContext context, bool isBanner) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.grey[900],
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo, color: Colors.white),
+                title: const Text("Select Photo (PNG/JPEG)", style: TextStyle(color: Colors.white)),
+                onTap: () {
+                  Navigator.pop(context);
+                  ref.read(profileProvider.notifier).pickImage(isBanner);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.gif, color: Colors.white),
+                title: const Text("Select Animated GIF", style: TextStyle(color: Colors.white)),
+                onTap: () {
+                  Navigator.pop(context);
+                  ref.read(profileProvider.notifier).pickGif(isBanner);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -90,9 +125,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     children: [
                       // 1. BANNER EDITOR
                       GestureDetector(
-                        onTap: () async {
-                          await profileNotifier.pickImage(true);
-                        },
+                        onTap: () => _showImagePickerOptions(context, true),
                         child: Container(
                           height: 180,
                           width: double.infinity,
@@ -117,9 +150,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         top: 120, // Overlaps the bottom edge of the banner
                         left: 20,
                         child: GestureDetector(
-                          onTap: () async {
-                            await profileNotifier.pickImage(false); 
-                          },
+                          onTap: () => _showImagePickerOptions(context, false),
                           child: Container(
                             padding: const EdgeInsets.all(4),
                             decoration: const BoxDecoration(

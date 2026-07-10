@@ -1,10 +1,12 @@
 import 'dart:convert'; // Import this for Base64
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:hive/hive.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:file_picker/file_picker.dart';
 import '../../../auth/data/auth_service.dart';
 
 class ProfileState {
@@ -143,6 +145,57 @@ class ProfileNotifier extends Notifier<ProfileState> {
 
     } catch (e) {
       debugPrint("Error encoding image: $e");
+      state = state.copyWith(isLoading: false);
+    }
+  }
+
+  Future<void> pickGif(bool isBanner) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    state = state.copyWith(isLoading: true);
+
+    try {
+      final FilePickerResult? result = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['gif'],
+      );
+
+      if (result == null || result.files.isEmpty) {
+        state = state.copyWith(isLoading: false);
+        return;
+      }
+
+      final file = result.files.first;
+      final path = file.path;
+      if (path == null) {
+        state = state.copyWith(isLoading: false);
+        return;
+      }
+
+      final bytes = await File(path).readAsBytes();
+
+      if (bytes.length > 800000) {
+        // Enforce the 800KB limit for GIFs to prevent Firestore document size errors (1MB limit)
+        state = state.copyWith(isLoading: false);
+        return;
+      }
+
+      String base64Image = base64Encode(bytes);
+
+      if (isBanner) {
+        state = state.copyWith(bannerPath: base64Image, isLoading: false);
+        await _firestore.collection('users').doc(user.uid).set({
+          'banner_image': base64Image,
+        }, SetOptions(merge: true));
+      } else {
+        state = state.copyWith(avatarPath: base64Image, isLoading: false);
+        await _firestore.collection('users').doc(user.uid).set({
+          'avatar_image': base64Image,
+        }, SetOptions(merge: true));
+      }
+    } catch (e) {
+      debugPrint("Error picking GIF: $e");
       state = state.copyWith(isLoading: false);
     }
   }

@@ -9,6 +9,7 @@ class Movie {
   final bool isWatched;
   final double? myRating; // User's Popcorn Rating
   final bool isFavorite; // New Field
+  final DateTime? watchedAt;
 
   Movie({
     required this.id,
@@ -20,6 +21,7 @@ class Movie {
     this.isWatched = false,
     this.myRating,
     this.isFavorite = false,
+    this.watchedAt,
   });
 
   factory Movie.fromJson(Map<String, dynamic> json) {
@@ -40,6 +42,9 @@ class Movie {
           ? (json['my_rating'] as num).toDouble()
           : null, // Load from JSON
       isFavorite: json['is_favorite'] ?? false,
+      watchedAt: json['watched_at'] != null
+          ? DateTime.tryParse(json['watched_at'])
+          : null,
     );
   }
 
@@ -55,6 +60,7 @@ class Movie {
       'is_watched': isWatched,
       'my_rating': myRating, // Save to JSON
       'is_favorite': isFavorite,
+      'watched_at': watchedAt?.toIso8601String(),
     };
   }
 }

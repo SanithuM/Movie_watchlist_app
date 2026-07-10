@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../data/datasources/tv_remote_data_source.dart';
 import '../../data/repositories/tv_repository_impl.dart';
 import '../../domain/repositories/tv_repository.dart';
@@ -123,11 +124,108 @@ class TvShowActionNotifier extends AsyncNotifier<void> {
       state = AsyncError(e, stackTrace);
     }
   }
+
+  Future<void> unmarkEpisodeAsWatched({
+    required String userId,
+    required String showId,
+    required int seasonNum,
+    required int episodeNum,
+  }) async {
+    state = const AsyncLoading();
+
+    try {
+      await ref.read(tvRepositoryProvider).unmarkEpisodeAsWatched(
+        userId: userId,
+        showId: showId,
+        seasonNum: seasonNum,
+        episodeNum: episodeNum,
+      );
+      state = const AsyncData(null);
+    } catch (e, stackTrace) {
+      state = AsyncError(e, stackTrace);
+    }
+  }
+
+  Future<void> toggleSeasonWatched({
+    required String userId,
+    required String showId,
+    required int seasonNum,
+    required int totalEpisodesInSeason,
+    required List<String> watchedEpisodeIds,
+  }) async {
+    state = const AsyncLoading();
+
+    try {
+      await ref.read(tvRepositoryProvider).toggleSeasonWatched(
+        userId: userId,
+        showId: showId,
+        seasonNum: seasonNum,
+        totalEpisodesInSeason: totalEpisodesInSeason,
+        watchedEpisodeIds: watchedEpisodeIds,
+      );
+      state = const AsyncData(null);
+    } catch (e, stackTrace) {
+      state = AsyncError(e, stackTrace);
+    }
+  }
+
+  Future<void> toggleAllEpisodesWatched({
+    required String userId,
+    required String showId,
+    required List<Map<String, dynamic>> seasonsList,
+    required List<String> watchedEpisodeIds,
+  }) async {
+    state = const AsyncLoading();
+
+    try {
+      await ref.read(tvRepositoryProvider).toggleAllEpisodesWatched(
+        userId: userId,
+        showId: showId,
+        seasonsList: seasonsList,
+        watchedEpisodeIds: watchedEpisodeIds,
+      );
+      state = const AsyncData(null);
+    } catch (e, stackTrace) {
+      state = AsyncError(e, stackTrace);
+    }
+  }
+
+  Future<void> resetShowProgress({
+    required String userId,
+    required String showId,
+    required List<String> watchedEpisodeIds,
+  }) async {
+    state = const AsyncLoading();
+
+    try {
+      await ref.read(tvRepositoryProvider).resetShowProgress(
+        userId: userId,
+        showId: showId,
+        watchedEpisodeIds: watchedEpisodeIds,
+      );
+      state = const AsyncData(null);
+    } catch (e, stackTrace) {
+      state = AsyncError(e, stackTrace);
+    }
+  }
 }
 
 // Expose the Notifier to the UI
 final tvShowActionProvider =
     AsyncNotifierProvider<TvShowActionNotifier, void>(TvShowActionNotifier.new);
+
+final tvWatchedEpisodesProvider = StreamProvider.family<List<String>, String>((ref, showId) {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) return Stream.value([]);
+  return FirebaseFirestore.instance
+      .collection('users')
+      .doc(user.uid)
+      .collection('trackedShows')
+      .doc(showId)
+      .collection('episodes')
+      .snapshots()
+      .map((snapshot) => snapshot.docs.map((doc) => doc.id).toList());
+});
 
 class UpcomingEpisode {
   final TvShow show;

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../auth/data/auth_service.dart';
 import '../providers/profile_provider.dart';
+import 'import_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -62,6 +63,34 @@ class SettingsScreen extends ConsumerWidget {
               user?.uid ?? "N/A",
               headerStyle,
               contentStyle,
+            ),
+
+            const Divider(color: Colors.grey, height: 40),
+
+            Text("Data Management", style: sectionHeaderStyle),
+            const SizedBox(height: 15),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(
+                Icons.import_export,
+                color: Colors.white,
+              ),
+              title: const Text(
+                'Import TV Time Data',
+                style: TextStyle(color: Colors.white, fontSize: 16),
+              ),
+              trailing: const Icon(
+                Icons.chevron_right,
+                color: Colors.grey,
+              ),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ImportScreen(),
+                  ),
+                );
+              },
             ),
 
             const Divider(color: Colors.grey, height: 40),

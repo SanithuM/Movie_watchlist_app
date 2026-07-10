@@ -104,4 +104,64 @@ Future<Map<String, dynamic>> getTvShowDetails(String showId) async {
       showId: showId,
     );
   }
+
+  @override
+  Future<void> unmarkEpisodeAsWatched({
+    required String userId,
+    required String showId,
+    required int seasonNum,
+    required int episodeNum,
+  }) async {
+    return await remoteDataSource.unmarkEpisodeAsWatched(
+      userId: userId,
+      showId: showId,
+      seasonNum: seasonNum,
+      episodeNum: episodeNum,
+    );
+  }
+
+  @override
+  Future<void> toggleSeasonWatched({
+    required String userId,
+    required String showId,
+    required int seasonNum,
+    required int totalEpisodesInSeason,
+    required List<String> watchedEpisodeIds,
+  }) async {
+    return await remoteDataSource.toggleSeasonWatched(
+      userId: userId,
+      showId: showId,
+      seasonNum: seasonNum,
+      totalEpisodesInSeason: totalEpisodesInSeason,
+      watchedEpisodeIds: watchedEpisodeIds,
+    );
+  }
+
+  @override
+  Future<void> toggleAllEpisodesWatched({
+    required String userId,
+    required String showId,
+    required List<Map<String, dynamic>> seasonsList,
+    required List<String> watchedEpisodeIds,
+  }) async {
+    return await remoteDataSource.toggleAllEpisodesWatched(
+      userId: userId,
+      showId: showId,
+      seasonsList: seasonsList,
+      watchedEpisodeIds: watchedEpisodeIds,
+    );
+  }
+
+  @override
+  Future<void> resetShowProgress({
+    required String userId,
+    required String showId,
+    required List<String> watchedEpisodeIds,
+  }) async {
+    return await remoteDataSource.resetShowProgress(
+      userId: userId,
+      showId: showId,
+      watchedEpisodeIds: watchedEpisodeIds,
+    );
+  }
 }
