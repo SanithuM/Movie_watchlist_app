@@ -57,18 +57,6 @@
 
 ---
 
-## 👥 Team & Contributions
-
-This is a **group project**, and responsibilities were divided as follows:
-
-| Name          | Role / Features                                                               |
-| ------------- | ----------------------------------------------------------------------------- |
-| Member 1 Santhosh | Identity & Accounts: Authentication, Profile Management, Image Sync, Settings |
-| Member 2 Sanithu Malhiru | Discovery: Trending UI, Movie Details Screen, Popcorn Rater                   |
-| Member 3 Ashen | Core Utility: Watchlist Logic, Search API Integration, CRUD Operations        |
-
----
-
 ## 📂 Project Structure
 
 The project follows a **Clean Architecture + Feature-First** approach:
