@@ -17,9 +17,57 @@ class TvRepositoryImpl implements TvRepository {
     required String userId,
     required TvShow show,
   }) async {
+    List<int> episodeRunTimes = show.episodeRunTimes;
+
+    if (episodeRunTimes.isEmpty || (episodeRunTimes.length == 1 && episodeRunTimes.first == 45)) {
+      final constructedRuntimes = <int>[];
+      try {
+        final details = await _apiService.fetchTvShowDetails(show.id);
+        final seasons = details['seasons'] as List<dynamic>? ?? [];
+        for (final season in seasons) {
+          final seasonNum = season['season_number'] as int?;
+          if (seasonNum != null && seasonNum > 0) {
+            try {
+              final seasonDetails = await _apiService.fetchTvSeasonDetails(show.id, seasonNum);
+              final episodes = seasonDetails['episodes'] as List<dynamic>? ?? [];
+              for (final ep in episodes) {
+                final runtime = ep['runtime'] as int? ?? show.episodeRunTime;
+                constructedRuntimes.add(runtime);
+              }
+            } catch (_) {
+              final epCount = season['episode_count'] as int? ?? 0;
+              for (int i = 0; i < epCount; i++) {
+                constructedRuntimes.add(show.episodeRunTime);
+              }
+            }
+          }
+        }
+      } catch (_) {}
+
+      if (constructedRuntimes.isNotEmpty) {
+        episodeRunTimes = constructedRuntimes;
+      }
+    }
+
+    final updatedShow = TvShow(
+      id: show.id,
+      title: show.title,
+      posterPath: show.posterPath,
+      progress: show.progress,
+      totalEpisodes: show.totalEpisodes,
+      status: show.status,
+      seasonEpisodeCounts: show.seasonEpisodeCounts,
+      voteAverage: show.voteAverage,
+      isFavorite: show.isFavorite,
+      episodeRunTime: show.episodeRunTime,
+      episodeRunTimes: episodeRunTimes,
+      watchedMinutes: show.watchedMinutes,
+      updatedAt: show.updatedAt,
+    );
+
     return await remoteDataSource.addShow(
       userId: userId,
-      show: show,
+      show: updatedShow,
     );
   }
 
@@ -29,6 +77,7 @@ class TvRepositoryImpl implements TvRepository {
     required String showId,
     required int seasonNum,
     required int episodeNum,
+    int? runtime,
   }) async {
     // This is where you would also add error handling,
     // logging, or logic to check connectivity before calling the source
@@ -37,6 +86,7 @@ class TvRepositoryImpl implements TvRepository {
       showId: showId,
       seasonNum: seasonNum,
       episodeNum: episodeNum,
+      runtime: runtime,
     );
   }
 
@@ -127,13 +177,31 @@ Future<Map<String, dynamic>> getTvShowDetails(String showId) async {
     required int seasonNum,
     required int totalEpisodesInSeason,
     required List<String> watchedEpisodeIds,
+    required int fallbackRuntime,
   }) async {
+    Map<int, int> episodeRuntimes = {};
+    try {
+      final seasonDetails = await _apiService.fetchTvSeasonDetails(showId, seasonNum);
+      final episodes = seasonDetails['episodes'] as List<dynamic>? ?? [];
+      for (final ep in episodes) {
+        final epNum = ep['episode_number'] as int?;
+        if (epNum != null) {
+          episodeRuntimes[epNum] = ep['runtime'] as int? ?? fallbackRuntime;
+        }
+      }
+    } catch (e) {
+      for (int i = 1; i <= totalEpisodesInSeason; i++) {
+        episodeRuntimes[i] = fallbackRuntime;
+      }
+    }
+
     return await remoteDataSource.toggleSeasonWatched(
       userId: userId,
       showId: showId,
       seasonNum: seasonNum,
       totalEpisodesInSeason: totalEpisodesInSeason,
       watchedEpisodeIds: watchedEpisodeIds,
+      episodeRuntimes: episodeRuntimes,
     );
   }
 
@@ -143,12 +211,47 @@ Future<Map<String, dynamic>> getTvShowDetails(String showId) async {
     required String showId,
     required List<Map<String, dynamic>> seasonsList,
     required List<String> watchedEpisodeIds,
+    required int fallbackRuntime,
   }) async {
+    final Map<String, int> episodeRuntimes = {};
+    try {
+      final List<Future<Map<String, dynamic>>> seasonFutures = [];
+      final List<int> seasonNums = [];
+      for (final s in seasonsList) {
+        final sNum = s['season_number'] as int? ?? 0;
+        if (sNum > 0) {
+          seasonFutures.add(_apiService.fetchTvSeasonDetails(showId, sNum));
+          seasonNums.add(sNum);
+        }
+      }
+      final seasonsDetails = await Future.wait(seasonFutures);
+      for (int i = 0; i < seasonsDetails.length; i++) {
+        final details = seasonsDetails[i];
+        final seasonNum = seasonNums[i];
+        final episodes = details['episodes'] as List<dynamic>? ?? [];
+        for (final ep in episodes) {
+          final epNum = ep['episode_number'] as int?;
+          if (epNum != null) {
+            episodeRuntimes['S${seasonNum}E$epNum'] = ep['runtime'] as int? ?? fallbackRuntime;
+          }
+        }
+      }
+    } catch (e) {
+      for (final s in seasonsList) {
+        final seasonNum = s['season_number'] as int? ?? 0;
+        final episodeCount = s['episode_count'] as int? ?? 0;
+        for (int i = 1; i <= episodeCount; i++) {
+          episodeRuntimes['S${seasonNum}E$i'] = fallbackRuntime;
+        }
+      }
+    }
+
     return await remoteDataSource.toggleAllEpisodesWatched(
       userId: userId,
       showId: showId,
       seasonsList: seasonsList,
       watchedEpisodeIds: watchedEpisodeIds,
+      episodeRuntimes: episodeRuntimes,
     );
   }
 

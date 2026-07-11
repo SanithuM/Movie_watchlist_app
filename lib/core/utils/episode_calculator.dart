@@ -1,5 +1,3 @@
-// lib/core/utils/episode_calculator.dart
-
 class EpisodeCalculator {
   /// Calculates the next season and episode based on total progress.
   /// [progress] is the total number of episodes watched.
@@ -32,5 +30,24 @@ class EpisodeCalculator {
       'season': -1,
       'episode': -1,
     };
+  }
+
+  /// Calculates the average runtime from TMDB's episode_run_time list.
+  static int getAverageRuntime(List<dynamic>? runTimeList) {
+    if (runTimeList == null || runTimeList.isEmpty) {
+      return 45; // default fallback
+    }
+    final total = runTimeList.map((e) => (e as num).toInt()).reduce((a, b) => a + b);
+    return (total / runTimeList.length).round();
+  }
+
+  /// Formats total minutes into months, days, and hours.
+  static Map<String, int> formatTime(int totalMinutes) {
+    final int months = totalMinutes ~/ (60 * 24 * 30);
+    final int remainingAfterMonths = totalMinutes % (60 * 24 * 30);
+    final int days = remainingAfterMonths ~/ (60 * 24);
+    final int remainingAfterDays = remainingAfterMonths % (60 * 24);
+    final int hours = remainingAfterDays ~/ 60;
+    return {'months': months, 'days': days, 'hours': hours};
   }
 }

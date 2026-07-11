@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -15,6 +16,7 @@ import 'media_grid_screen.dart';
 import '../../../tv_shows/domain/entities/tv_show.dart';
 import '../../../tv_shows/presentation/providers/tv_providers.dart';
 import '../../../tv_shows/presentation/screens/tv_detail_screen.dart';
+import '../../../../core/utils/episode_calculator.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -33,8 +35,11 @@ class ProfileScreen extends ConsumerWidget {
       }
     }
     if (imageString.startsWith('http')) return NetworkImage(imageString);
-    final file = File(imageString);
-    return file.existsSync() ? FileImage(file) : null;
+    if (!kIsWeb) {
+      final file = File(imageString);
+      return file.existsSync() ? FileImage(file) : null;
+    }
+    return null;
   }
 
   void _showCreateListDialog(BuildContext context, WidgetRef ref) {
@@ -220,23 +225,14 @@ class ProfileScreen extends ConsumerWidget {
       );
       totalTvMinutes = tvAsyncValue.value!.fold(
         0,
-        (sum, show) => sum + (show.progress * show.episodeRunTime),
+        (sum, show) => sum + (show.watchedMinutes ?? (show.progress * show.episodeRunTime)),
       );
     }
 
     final int totalMovieMinutes = totalMoviesWatched * 120;
 
-    Map<String, int> formatTime(int totalMinutes) {
-      final int months = totalMinutes ~/ (60 * 24 * 30);
-      final int remainingAfterMonths = totalMinutes % (60 * 24 * 30);
-      final int days = remainingAfterMonths ~/ (60 * 24);
-      final int remainingAfterDays = remainingAfterMonths % (60 * 24);
-      final int hours = remainingAfterDays ~/ 60;
-      return {'months': months, 'days': days, 'hours': hours};
-    }
-
-    final movieTime = formatTime(totalMovieMinutes);
-    final tvTime = formatTime(totalTvMinutes);
+    final movieTime = EpisodeCalculator.formatTime(totalMovieMinutes);
+    final tvTime = EpisodeCalculator.formatTime(totalTvMinutes);
 
     final bannerProvider = _getImageProvider(profileState.bannerPath);
     final avatarProvider = _getImageProvider(profileState.avatarPath);

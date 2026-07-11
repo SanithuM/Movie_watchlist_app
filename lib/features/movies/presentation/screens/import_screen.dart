@@ -12,6 +12,7 @@ import '../../data/models/movie_model.dart';
 import '../providers/wishlist_provider.dart';
 import '../../../tv_shows/domain/entities/tv_show.dart';
 import '../../../tv_shows/presentation/providers/tv_providers.dart';
+import '../../../../core/utils/episode_calculator.dart';
 
 class ImportScreen extends ConsumerStatefulWidget {
   const ImportScreen({super.key});
@@ -355,9 +356,7 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
   }) async {
     final details = await apiService.fetchTvShowDetails(tmdbId);
     final runTimeList = details['episode_run_time'] as List?;
-    final int episodeRunTime = (runTimeList != null && runTimeList.isNotEmpty)
-        ? (runTimeList.first as num).toInt()
-        : 45;
+    final int episodeRunTime = EpisodeCalculator.getAverageRuntime(runTimeList);
     final seasons = details['seasons'] as List? ?? [];
     final episodeCounts = seasons
         .where((s) =>

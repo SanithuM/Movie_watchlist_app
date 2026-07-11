@@ -37,17 +37,30 @@ class TvRemoteDataSource {
       }
     }
 
+    int existingWatchedMinutes = 0;
+    if (existingProgress > 0) {
+      for (final doc in episodesSnapshot.docs) {
+        final docData = doc.data();
+        final runtime = docData['runtime'] as int?;
+        existingWatchedMinutes += runtime ?? (show.episodeRunTime as int? ?? 45);
+      }
+    } else {
+      existingWatchedMinutes = show.watchedMinutes ?? 0;
+    }
+
     await showRef.set({
       'id': show.id,
       'title': show.title,
       'posterPath': show.posterPath,
       'progress': existingProgress > 0 ? existingProgress : show.progress,
+      'watchedMinutes': existingWatchedMinutes,
       'totalEpisodes': show.totalEpisodes,
       'status': show.status,
       'seasonEpisodeCounts': show.seasonEpisodeCounts,
       'voteAverage': show.voteAverage,
       'isFavorite': show.isFavorite,
       'episodeRunTime': show.episodeRunTime,
+      'episodeRunTimes': show.episodeRunTimes,
       if (lastWatchedSeason != null) 'lastWatchedSeason': lastWatchedSeason,
       if (lastWatchedEpisode != null) 'lastWatchedEpisode': lastWatchedEpisode,
       'createdAt': FieldValue.serverTimestamp(),
@@ -77,6 +90,7 @@ class TvRemoteDataSource {
     required String showId,
     required int seasonNum,
     required int episodeNum,
+    int? runtime,
   }) async {
     final batch = _db.batch();
 
@@ -93,10 +107,12 @@ class TvRemoteDataSource {
       'seasonNumber': seasonNum,
       'episodeNumber': episodeNum,
       'watchedAt': FieldValue.serverTimestamp(),
+      if (runtime != null) 'runtime': runtime,
     });
 
     batch.set(showRef, {
       'progress': FieldValue.increment(1),
+      if (runtime != null) 'watchedMinutes': FieldValue.increment(runtime),
       'lastWatchedSeason': seasonNum,
       'lastWatchedEpisode': episodeNum,
       'updatedAt': FieldValue.serverTimestamp(),
@@ -161,8 +177,6 @@ class TvRemoteDataSource {
     required int seasonNum,
     required int episodeNum,
   }) async {
-    final batch = _db.batch();
-
     final showRef = _db
         .collection('users')
         .doc(userId)
@@ -172,10 +186,29 @@ class TvRemoteDataSource {
     final episodeId = 'S${seasonNum}E$episodeNum';
     final episodeRef = showRef.collection('episodes').doc(episodeId);
 
+    // Fetch the episode document to check for stored runtime
+    final episodeSnap = await episodeRef.get();
+    int runtimeToSubtract = 0;
+    if (episodeSnap.exists) {
+      runtimeToSubtract = episodeSnap.data()?['runtime'] as int? ?? 0;
+    }
+
+    if (runtimeToSubtract == 0) {
+      // Fallback: if there is no runtime stored in the episode doc, we can fetch the show doc to read its average episodeRunTime
+      final showSnap = await showRef.get();
+      if (showSnap.exists) {
+        runtimeToSubtract = showSnap.data()?['episodeRunTime'] as int? ?? 45;
+      } else {
+        runtimeToSubtract = 45;
+      }
+    }
+
+    final batch = _db.batch();
     batch.delete(episodeRef);
 
     batch.set(showRef, {
       'progress': FieldValue.increment(-1),
+      'watchedMinutes': FieldValue.increment(-runtimeToSubtract),
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
 
@@ -192,6 +225,7 @@ class TvRemoteDataSource {
     required int seasonNum,
     required int totalEpisodesInSeason,
     required List<String> watchedEpisodeIds,
+    required Map<int, int> episodeRuntimes,
   }) async {
     final showRef = _db
         .collection('users')
@@ -210,10 +244,14 @@ class TvRemoteDataSource {
     final batch = _db.batch();
 
     int progressDelta = 0;
+    int minutesDelta = 0;
 
     if (isFullyWatched) {
       // Mark all as unwatched: delete all watched docs for this season
       for (final epId in seasonWatchedDocs) {
+        final epNum = int.tryParse(epId.substring(seasonWatchedPrefix.length)) ?? 0;
+        final runtime = episodeRuntimes[epNum] ?? 45;
+        minutesDelta -= runtime;
         batch.delete(episodesCollection.doc(epId));
       }
       progressDelta = -totalEpisodesInSeason;
@@ -222,18 +260,22 @@ class TvRemoteDataSource {
       for (int i = 1; i <= totalEpisodesInSeason; i++) {
         final epId = 'S${seasonNum}E$i';
         if (!watchedEpisodeIds.contains(epId)) {
+          final runtime = episodeRuntimes[i] ?? 45;
           batch.set(episodesCollection.doc(epId), {
             'seasonNumber': seasonNum,
             'episodeNumber': i,
             'watchedAt': FieldValue.serverTimestamp(),
+            'runtime': runtime,
           });
           progressDelta++;
+          minutesDelta += runtime;
         }
       }
     }
 
     batch.set(showRef, {
       'progress': FieldValue.increment(progressDelta),
+      'watchedMinutes': FieldValue.increment(minutesDelta),
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
 
@@ -249,6 +291,7 @@ class TvRemoteDataSource {
     required String showId,
     required List<Map<String, dynamic>> seasonsList,
     required List<String> watchedEpisodeIds,
+    required Map<String, int> episodeRuntimes,
   }) async {
     final showRef = _db
         .collection('users')
@@ -269,11 +312,14 @@ class TvRemoteDataSource {
     final batch = _db.batch();
 
     int progressDelta = 0;
+    int minutesDelta = 0;
 
     if (isFullyWatched) {
       // Mark all as unwatched: delete all watched docs
       for (final epId in watchedEpisodeIds) {
         batch.delete(episodesCollection.doc(epId));
+        final runtime = episodeRuntimes[epId] ?? 45;
+        minutesDelta -= runtime;
       }
       progressDelta = -watchedEpisodeIds.length;
     } else {
@@ -284,12 +330,15 @@ class TvRemoteDataSource {
         for (int i = 1; i <= episodeCount; i++) {
           final epId = 'S${seasonNum}E$i';
           if (!watchedEpisodeIds.contains(epId)) {
+            final runtime = episodeRuntimes[epId] ?? 45;
             batch.set(episodesCollection.doc(epId), {
               'seasonNumber': seasonNum,
               'episodeNumber': i,
               'watchedAt': FieldValue.serverTimestamp(),
+              'runtime': runtime,
             });
             progressDelta++;
+            minutesDelta += runtime;
           }
         }
       }
@@ -297,6 +346,7 @@ class TvRemoteDataSource {
 
     batch.set(showRef, {
       'progress': FieldValue.increment(progressDelta),
+      'watchedMinutes': FieldValue.increment(minutesDelta),
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
 
@@ -328,6 +378,7 @@ class TvRemoteDataSource {
 
     batch.set(showRef, {
       'progress': 0,
+      'watchedMinutes': 0,
       'lastWatchedSeason': FieldValue.delete(),
       'lastWatchedEpisode': FieldValue.delete(),
       'updatedAt': FieldValue.serverTimestamp(),

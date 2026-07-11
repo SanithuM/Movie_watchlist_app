@@ -11,6 +11,7 @@ abstract class TvRepository {
     required String showId,
     required int seasonNum,
     required int episodeNum,
+    int? runtime,
   });
 
   Stream<List<TvShow>> getUserWatchlist(String userId);
@@ -43,6 +44,7 @@ abstract class TvRepository {
     required int seasonNum,
     required int totalEpisodesInSeason,
     required List<String> watchedEpisodeIds,
+    required int fallbackRuntime,
   });
 
   Future<void> toggleAllEpisodesWatched({
@@ -50,6 +52,7 @@ abstract class TvRepository {
     required String showId,
     required List<Map<String, dynamic>> seasonsList,
     required List<String> watchedEpisodeIds,
+    required int fallbackRuntime,
   });
 
   Future<void> resetShowProgress({

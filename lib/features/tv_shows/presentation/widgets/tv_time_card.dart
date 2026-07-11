@@ -38,6 +38,7 @@ class TvTimeCard extends ConsumerWidget {
 
     String episodeTitle = '';
     bool isNew = false;
+    int? nextEpisodeRuntime;
     if (seasonAsync != null && seasonAsync.hasValue) {
       final episodes = seasonAsync.value?['episodes'] as List<dynamic>? ?? [];
       final currentEp = episodes.firstWhere(
@@ -46,6 +47,7 @@ class TvTimeCard extends ConsumerWidget {
       );
       if (currentEp != null) {
         episodeTitle = currentEp['name'] ?? '';
+        nextEpisodeRuntime = currentEp['runtime'] as int?;
         final airDateStr = currentEp['air_date'] as String?;
         if (airDateStr != null && airDateStr.isNotEmpty) {
           final airDate = DateTime.tryParse(airDateStr);
@@ -233,6 +235,7 @@ class TvTimeCard extends ConsumerWidget {
                           showId: show.id,
                           seasonNum: nextSeason, 
                           episodeNum: nextEpisode,
+                          runtime: nextEpisodeRuntime ?? show.episodeRunTime,
                         );
                       },
                       child: Container(

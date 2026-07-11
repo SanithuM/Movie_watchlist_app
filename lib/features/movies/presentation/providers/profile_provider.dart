@@ -1,7 +1,7 @@
-import 'dart:convert'; // Import this for Base64
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/services/cloudinary_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:hive/hive.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -96,62 +96,64 @@ class ProfileNotifier extends Notifier<ProfileState> {
     }
   }
 
-  // Pick Image, Aggressively Compress, & Convert to Base64 String 
-  Future<void> pickImage(bool isBanner) async {
+  // Pick Image, Aggressively Compress, & Upload to Cloudinary
+  Future<String?> pickImage(bool isBanner) async {
     final user = _auth.currentUser;
-    if (user == null) return;
+    if (user == null) return "User is not logged in.";
 
     // Set precise boundaries depending on use case to save space.
     // Banners need width but can be shallow; avatars can be quite small squares.
     final double targetWidth = isBanner ? 600 : 250;
 
-    // Pick Image with low quality and capped resolution constraints
-    final XFile? image = await _picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 25,     // Downsample image quality strictly to lower file size
-      maxWidth: targetWidth, // Restrict maximum width dimension
-    );
-    
-    if (image == null) return;
-
-    state = state.copyWith(isLoading: true);
-
     try {
+      // Pick Image with low quality and capped resolution constraints
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 25,     // Downsample image quality strictly to lower file size
+        maxWidth: targetWidth, // Restrict maximum width dimension
+      );
+      
+      if (image == null) return null; // User cancelled
+
+      state = state.copyWith(isLoading: true);
+
       // Convert File to Bytes
       final bytes = await image.readAsBytes();
       
-      // Safety Validation: Ensure the data block is safely under our threshold (800KB)
-      if (bytes.length > 800000) {
-        debugPrint("Error: Highly compressed image still exceeds strict document safety budget.");
+      // Enforce a sensible 10MB limit for Cloudinary upload
+      if (bytes.length > 10000000) {
         state = state.copyWith(isLoading: false);
-        return;
+        return "Image size exceeds the 10MB limit.";
       }
 
-      // Encode bytes down to a Base64 string representation
-      String base64Image = base64Encode(bytes);
+      // Upload to Cloudinary
+      final cloudinaryService = ref.read(cloudinaryServiceProvider);
+      final filename = isBanner ? 'banner_${user.uid}.jpg' : 'avatar_${user.uid}.jpg';
+      final imageUrl = await cloudinaryService.uploadImage(bytes, filename);
 
       // Save String to Firestore & Update State
       if (isBanner) {
-        state = state.copyWith(bannerPath: base64Image, isLoading: false);
+        state = state.copyWith(bannerPath: imageUrl, isLoading: false);
         await _firestore.collection('users').doc(user.uid).set({
-          'banner_image': base64Image,
+          'banner_image': imageUrl,
         }, SetOptions(merge: true));
       } else {
-        state = state.copyWith(avatarPath: base64Image, isLoading: false);
+        state = state.copyWith(avatarPath: imageUrl, isLoading: false);
         await _firestore.collection('users').doc(user.uid).set({
-          'avatar_image': base64Image,
+          'avatar_image': imageUrl,
         }, SetOptions(merge: true));
       }
-
+      return null;
     } catch (e) {
-      debugPrint("Error encoding image: $e");
+      debugPrint("Error picking image: $e");
       state = state.copyWith(isLoading: false);
+      return e.toString().replaceAll("Exception: ", "");
     }
   }
 
-  Future<void> pickGif(bool isBanner) async {
+  Future<String?> pickGif(bool isBanner) async {
     final user = _auth.currentUser;
-    if (user == null) return;
+    if (user == null) return "User is not logged in.";
 
     state = state.copyWith(isLoading: true);
 
@@ -159,44 +161,53 @@ class ProfileNotifier extends Notifier<ProfileState> {
       final FilePickerResult? result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['gif'],
+        withData: true,
       );
 
       if (result == null || result.files.isEmpty) {
         state = state.copyWith(isLoading: false);
-        return;
+        return null; // User cancelled
       }
 
       final file = result.files.first;
-      final path = file.path;
-      if (path == null) {
-        state = state.copyWith(isLoading: false);
-        return;
+      Uint8List? bytes = file.bytes;
+
+      if (bytes == null && !kIsWeb && file.path != null) {
+        bytes = await File(file.path!).readAsBytes();
       }
 
-      final bytes = await File(path).readAsBytes();
-
-      if (bytes.length > 800000) {
-        // Enforce the 800KB limit for GIFs to prevent Firestore document size errors (1MB limit)
+      if (bytes == null) {
         state = state.copyWith(isLoading: false);
-        return;
+        return "Could not retrieve GIF file bytes.";
       }
 
-      String base64Image = base64Encode(bytes);
+      // Enforce a sensible 10MB limit for Cloudinary upload
+      if (bytes.length > 10000000) {
+        state = state.copyWith(isLoading: false);
+        return "GIF size (${(bytes.length / 1048576).toStringAsFixed(1)} MB) exceeds the 10MB limit.";
+      }
+
+      // Upload to Cloudinary
+      final cloudinaryService = ref.read(cloudinaryServiceProvider);
+      final filename = isBanner ? 'banner_${user.uid}.gif' : 'avatar_${user.uid}.gif';
+      final imageUrl = await cloudinaryService.uploadImage(bytes, filename);
 
       if (isBanner) {
-        state = state.copyWith(bannerPath: base64Image, isLoading: false);
+        state = state.copyWith(bannerPath: imageUrl, isLoading: false);
         await _firestore.collection('users').doc(user.uid).set({
-          'banner_image': base64Image,
+          'banner_image': imageUrl,
         }, SetOptions(merge: true));
       } else {
-        state = state.copyWith(avatarPath: base64Image, isLoading: false);
+        state = state.copyWith(avatarPath: imageUrl, isLoading: false);
         await _firestore.collection('users').doc(user.uid).set({
-          'avatar_image': base64Image,
+          'avatar_image': imageUrl,
         }, SetOptions(merge: true));
       }
+      return null;
     } catch (e) {
       debugPrint("Error picking GIF: $e");
       state = state.copyWith(isLoading: false);
+      return e.toString().replaceAll("Exception: ", "");
     }
   }
 

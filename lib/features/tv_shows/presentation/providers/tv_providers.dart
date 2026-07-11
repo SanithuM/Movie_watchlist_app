@@ -73,6 +73,7 @@ class TvShowActionNotifier extends AsyncNotifier<void> {
     required String showId,
     required int seasonNum,
     required int episodeNum,
+    int? runtime,
   }) async {
     state = const AsyncLoading();
 
@@ -82,6 +83,7 @@ class TvShowActionNotifier extends AsyncNotifier<void> {
         showId: showId,
         seasonNum: seasonNum,
         episodeNum: episodeNum,
+        runtime: runtime,
       );
       state = const AsyncData(null);
     } catch (e, stackTrace) {
@@ -152,6 +154,7 @@ class TvShowActionNotifier extends AsyncNotifier<void> {
     required int seasonNum,
     required int totalEpisodesInSeason,
     required List<String> watchedEpisodeIds,
+    required int fallbackRuntime,
   }) async {
     state = const AsyncLoading();
 
@@ -162,6 +165,7 @@ class TvShowActionNotifier extends AsyncNotifier<void> {
         seasonNum: seasonNum,
         totalEpisodesInSeason: totalEpisodesInSeason,
         watchedEpisodeIds: watchedEpisodeIds,
+        fallbackRuntime: fallbackRuntime,
       );
       state = const AsyncData(null);
     } catch (e, stackTrace) {
@@ -174,6 +178,7 @@ class TvShowActionNotifier extends AsyncNotifier<void> {
     required String showId,
     required List<Map<String, dynamic>> seasonsList,
     required List<String> watchedEpisodeIds,
+    required int fallbackRuntime,
   }) async {
     state = const AsyncLoading();
 
@@ -183,6 +188,7 @@ class TvShowActionNotifier extends AsyncNotifier<void> {
         showId: showId,
         seasonsList: seasonsList,
         watchedEpisodeIds: watchedEpisodeIds,
+        fallbackRuntime: fallbackRuntime,
       );
       state = const AsyncData(null);
     } catch (e, stackTrace) {

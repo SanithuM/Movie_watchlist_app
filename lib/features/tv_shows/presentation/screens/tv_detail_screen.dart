@@ -236,9 +236,7 @@ class _TvDetailScreenState extends ConsumerState<TvDetailScreen> {
                     }
                   }
                   final runTimeList = details['episode_run_time'] as List?;
-                  final int episodeRunTime = (runTimeList != null && runTimeList.isNotEmpty)
-                      ? (runTimeList.first as num).toInt()
-                      : 45;
+                  final int episodeRunTime = EpisodeCalculator.getAverageRuntime(runTimeList);
 
                   final showWithMetadata = TvShow(
                     id: widget.show.id,
@@ -295,9 +293,7 @@ class _TvDetailScreenState extends ConsumerState<TvDetailScreen> {
                         }
                       }
                       final runTimeList = details['episode_run_time'] as List?;
-                      final int episodeRunTime = (runTimeList != null && runTimeList.isNotEmpty)
-                          ? (runTimeList.first as num).toInt()
-                          : 45;
+                      final int episodeRunTime = EpisodeCalculator.getAverageRuntime(runTimeList);
                       final showWithMetadata = TvShow(
                         id: widget.show.id,
                         title: widget.show.title,
@@ -421,9 +417,7 @@ class _TvDetailScreenState extends ConsumerState<TvDetailScreen> {
                   }
                 }
                 final runTimeList = details['episode_run_time'] as List?;
-                final int episodeRunTime = (runTimeList != null && runTimeList.isNotEmpty)
-                    ? (runTimeList.first as num).toInt()
-                    : 45;
+                final int episodeRunTime = EpisodeCalculator.getAverageRuntime(runTimeList);
 
                 final showWithMetadata = TvShow(
                   id: widget.show.id,
@@ -746,6 +740,7 @@ class _TvDetailScreenState extends ConsumerState<TvDetailScreen> {
                   showId: liveShow.id,
                   seasonsList: List<Map<String, dynamic>>.from(seasons),
                   watchedEpisodeIds: watchedEpisodeIds,
+                  fallbackRuntime: liveShow.episodeRunTime,
                 );
               },
               child: Container(
@@ -848,6 +843,7 @@ class _TvDetailScreenState extends ConsumerState<TvDetailScreen> {
                               seasonNum: seasonNum,
                               totalEpisodesInSeason: totalEpisodesInSeason,
                               watchedEpisodeIds: watchedEpisodeIds,
+                              fallbackRuntime: liveShow.episodeRunTime,
                             );
                           },
                           child: Container(
@@ -922,6 +918,7 @@ class _TvDetailScreenState extends ConsumerState<TvDetailScreen> {
                                           showId: liveShow.id,
                                           seasonNum: seasonNum,
                                           episodeNum: epNum,
+                                          runtime: ep['runtime'] as int? ?? liveShow.episodeRunTime,
                                         );
                                       }
                                     },
@@ -1026,9 +1023,7 @@ class _TvDetailScreenState extends ConsumerState<TvDetailScreen> {
                                 }
 
                                 final runTimeList = detailsAsync.value?['episode_run_time'] as List?;
-                                final int episodeRunTime = (runTimeList != null && runTimeList.isNotEmpty)
-                                    ? (runTimeList.first as num).toInt()
-                                    : 45;
+                                final int episodeRunTime = EpisodeCalculator.getAverageRuntime(runTimeList);
 
                                 final showWithMetadata = TvShow(
                                   id: widget.show.id,

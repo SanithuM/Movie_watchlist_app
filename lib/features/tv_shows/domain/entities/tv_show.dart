@@ -9,6 +9,8 @@ class TvShow {
   final double voteAverage;
   final bool isFavorite;
   final int episodeRunTime;
+  final List<int> episodeRunTimes;
+  final int? watchedMinutes;
   final DateTime? updatedAt;
 
   TvShow({
@@ -22,6 +24,8 @@ class TvShow {
     this.voteAverage = 0.0,
     this.isFavorite = false,
     this.episodeRunTime = 45,
+    this.episodeRunTimes = const [45],
+    this.watchedMinutes,
     this.updatedAt,
   });
 }

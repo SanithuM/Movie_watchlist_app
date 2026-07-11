@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/profile_provider.dart';
@@ -28,8 +29,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     }
     
     if (path.startsWith('http')) return NetworkImage(path);
-    final file = File(path);
-    return file.existsSync() ? FileImage(file) : null;
+    if (!kIsWeb) {
+      final file = File(path);
+      return file.existsSync() ? FileImage(file) : null;
+    }
+    return null;
   }
 
   void _showImagePickerOptions(BuildContext context, bool isBanner) {
@@ -39,7 +43,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder: (context) {
+      builder: (sheetContext) {
         return SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -47,17 +51,33 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               ListTile(
                 leading: const Icon(Icons.photo, color: Colors.white),
                 title: const Text("Select Photo (PNG/JPEG)", style: TextStyle(color: Colors.white)),
-                onTap: () {
-                  Navigator.pop(context);
-                  ref.read(profileProvider.notifier).pickImage(isBanner);
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  final error = await ref.read(profileProvider.notifier).pickImage(isBanner);
+                  if (error != null && context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(error),
+                        backgroundColor: Colors.redAccent,
+                      ),
+                    );
+                  }
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.gif, color: Colors.white),
                 title: const Text("Select Animated GIF", style: TextStyle(color: Colors.white)),
-                onTap: () {
-                  Navigator.pop(context);
-                  ref.read(profileProvider.notifier).pickGif(isBanner);
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  final error = await ref.read(profileProvider.notifier).pickGif(isBanner);
+                  if (error != null && context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(error),
+                        backgroundColor: Colors.redAccent,
+                      ),
+                    );
+                  }
                 },
               ),
             ],
