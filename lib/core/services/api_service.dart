@@ -1,11 +1,11 @@
 //HTTP client for TMDB; provides fetch and search helpers.
 import 'package:dio/dio.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class ApiService {
   // Base URL for TMDB
   static const String _baseUrl = 'https://api.themoviedb.org/3';
-  static const String _apiKey = 'ad18282e6d80edc89aaae58570b501a4';
 
   final Dio _dio;
 
@@ -16,7 +16,7 @@ class ApiService {
           connectTimeout: const Duration(seconds: 10), // Timeout after 10s
           receiveTimeout: const Duration(seconds: 10),
           queryParameters: {
-            'api_key': _apiKey, // Automatically adds API key to every request
+            'api_key': dotenv.env['TMDB_API_KEY'] ?? '', // Automatically adds API key to every request
             'language': 'en-US',
           },
         ),

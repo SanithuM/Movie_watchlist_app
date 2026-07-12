@@ -89,10 +89,10 @@ FIREBASE_PROJECT_ID=your_firebase_project_id
 FIREBASE_MESSAGING_SENDER_ID=your_firebase_sender_id
 FIREBASE_STORAGE_BUCKET=your_firebase_storage_bucket
 FIREBASE_AUTH_DOMAIN=your_firebase_auth_domain
+TMDB_API_KEY=your_tmdb_api_key
+
 ...
 ```
-
-*Note: The TMDB API Key is built into the `ApiService` class for convenience.*
 
 ---
 
