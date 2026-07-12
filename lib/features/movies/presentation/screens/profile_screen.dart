@@ -310,9 +310,9 @@ class ProfileScreen extends ConsumerWidget {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        // Avatar Circle with thick white border
+                        // Avatar Circle with slim white border
                         Container(
-                          padding: const EdgeInsets.all(3),
+                          padding: const EdgeInsets.all(1),
                           decoration: const BoxDecoration(
                             color: Colors.white,
                             shape: BoxShape.circle,

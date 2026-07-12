@@ -1,4 +1,4 @@
-# 🎬 CineList — Movie & TV Show Watchlist & Discovery App
+# 🎬 Binged — Movie & TV Show Watchlist & Discovery App
 
 ![Status - Active](https://img.shields.io/badge/Status-Active-brightgreen)
 ![Flutter](https://img.shields.io/badge/Flutter-3.x-blue?logo=flutter)
@@ -6,7 +6,7 @@
 ![Backend](https://img.shields.io/badge/Backend-Firebase-ffca28?logo=firebase)
 ![Storage](https://img.shields.io/badge/Storage-Cloudinary-blue?logo=cloudinary)
 
-**CineList** is a cross-platform **Flutter** mobile application designed to help users discover, track, and rate movies and TV shows in a fun and intuitive way. Featuring a clean dark-mode UI, real-time cloud synchronization, robust offline-first support, and comprehensive media tracking statistics, CineList serves as a complete media companion.
+**Binged** is a cross-platform **Flutter** mobile application designed to help users discover, track, and rate movies and TV shows in a fun and intuitive way. Featuring a clean dark-mode UI, real-time cloud synchronization, robust offline-first support, and comprehensive media tracking statistics, Binged serves as a complete media companion.
 
 ---
 

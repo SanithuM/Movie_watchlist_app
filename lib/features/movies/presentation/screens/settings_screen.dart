@@ -17,11 +17,11 @@ class SettingsScreen extends ConsumerWidget {
     final profileNotifier = ref.read(profileProvider.notifier);
 
     final headerStyle = TextStyle(
-      color: Colors.white.withOpacity(0.6),
+      color: Colors.white.withValues(alpha: 0.6),
       fontSize: 14,
       fontWeight: FontWeight.bold,
     );
-    final contentStyle = const TextStyle(color: Colors.blue, fontSize: 16);
+    final contentStyle = const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500);
     final sectionHeaderStyle = const TextStyle(
       color: Colors.white,
       fontSize: 18,
@@ -32,7 +32,7 @@ class SettingsScreen extends ConsumerWidget {
       backgroundColor: Colors.black,
       appBar: AppBar(
         backgroundColor: Colors.black,
-        title: const Text("Settings", style: TextStyle(color: Colors.white)),
+        title: const Text("Settings", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Padding(
@@ -65,7 +65,7 @@ class SettingsScreen extends ConsumerWidget {
               contentStyle,
             ),
 
-            const Divider(color: Colors.grey, height: 40),
+            Divider(color: Colors.grey[900], height: 40),
 
             Text("Data Management", style: sectionHeaderStyle),
             const SizedBox(height: 15),
@@ -73,7 +73,7 @@ class SettingsScreen extends ConsumerWidget {
               contentPadding: EdgeInsets.zero,
               leading: const Icon(
                 Icons.import_export,
-                color: Colors.white,
+                color: Color(0xFFFFD200),
               ),
               title: const Text(
                 'Import TV Time Data',
@@ -93,13 +93,22 @@ class SettingsScreen extends ConsumerWidget {
               },
             ),
 
-            const Divider(color: Colors.grey, height: 40),
+            Divider(color: Colors.grey[900], height: 40),
+            const SizedBox(height: 20),
 
             // Buttons
             SizedBox(
               width: double.infinity,
+              height: 50,
               child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFFD200),
+                  foregroundColor: Colors.black,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  elevation: 0,
+                ),
                 onPressed: () async {
                   await authService.signOut();
                   if (context.mounted) {
@@ -109,17 +118,26 @@ class SettingsScreen extends ConsumerWidget {
                   }
                 },
                 child: const Text(
-                  "Log out",
-                  style: TextStyle(color: Colors.white),
+                  "LOG OUT",
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.0,
+                  ),
                 ),
               ),
             ),
             const SizedBox(height: 15),
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red.withOpacity(0.2),
+              height: 50,
+              child: OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: Colors.red.withValues(alpha: 0.5), width: 1.5),
+                  foregroundColor: Colors.red,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
                 onPressed: () => _showDeleteConfirmation(
                   context,
@@ -128,8 +146,12 @@ class SettingsScreen extends ConsumerWidget {
                   profileNotifier,
                 ),
                 child: const Text(
-                  "Delete Account",
-                  style: TextStyle(color: Colors.red),
+                  "DELETE ACCOUNT",
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.0,
+                  ),
                 ),
               ),
             ),
@@ -167,19 +189,19 @@ class SettingsScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF2C2C2C),
+        backgroundColor: const Color(0xFF161616),
         title: const Text(
           "Delete Account?",
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         content: const Text(
           "This action is irreversible. All your data, including your wishlist and ratings, will be permanently deleted.",
-          style: TextStyle(color: Colors.white70),
+          style: TextStyle(color: Colors.grey),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text("Cancel"),
+            child: const Text("Cancel", style: TextStyle(color: Colors.grey)),
           ),
           TextButton(
             onPressed: () async {
@@ -207,7 +229,7 @@ class SettingsScreen extends ConsumerWidget {
                 }
               }
             },
-            child: const Text("Delete", style: TextStyle(color: Colors.red)),
+            child: const Text("Delete", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
           ),
         ],
       ),

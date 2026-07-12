@@ -157,6 +157,23 @@ class WishlistNotifier extends Notifier<List<Movie>> {
     );
   }
 
+  // Remove Movie (Deletes from Cloud & Local State)
+  Future<void> removeMovie(int movieId) async {
+    // Update Local State
+    state = state.where((m) => m.id != movieId).toList();
+
+    // Sync deletion to Firestore
+    final user = _auth.currentUser;
+    if (user != null) {
+      await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('wishlist')
+          .doc(movieId.toString())
+          .delete();
+    }
+  }
+
   // Helper to push updates to Firebase
   Future<void> _syncUpdateToCloud(
     int movieId,

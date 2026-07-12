@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../auth/data/auth_service.dart';
 import '../providers/wishlist_provider.dart';
@@ -131,7 +132,7 @@ class MovieScreen extends ConsumerWidget {
   }
 }
 
-class _MovieTimeCard extends ConsumerWidget {
+class _MovieTimeCard extends ConsumerStatefulWidget {
   final Movie movie;
 
   const _MovieTimeCard({
@@ -139,15 +140,34 @@ class _MovieTimeCard extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_MovieTimeCard> createState() => _MovieTimeCardState();
+}
+
+class _MovieTimeCardState extends ConsumerState<_MovieTimeCard> {
+  bool _showDelete = false;
+
+  @override
+  Widget build(BuildContext context) {
     return GestureDetector(
+      onLongPress: () {
+        HapticFeedback.mediumImpact();
+        setState(() {
+          _showDelete = !_showDelete;
+        });
+      },
       onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => DetailScreen(mediaItem: movie, isMovie: true),
-          ),
-        );
+        if (_showDelete) {
+          setState(() {
+            _showDelete = false;
+          });
+        } else {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => DetailScreen(mediaItem: widget.movie, isMovie: true),
+            ),
+          );
+        }
       },
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
@@ -165,7 +185,7 @@ class _MovieTimeCard extends ConsumerWidget {
                 bottomLeft: Radius.circular(8),
               ),
               child: Image.network(
-                movie.posterPath,
+                widget.movie.posterPath,
                 width: 95,
                 height: 125,
                 fit: BoxFit.cover,
@@ -201,7 +221,7 @@ class _MovieTimeCard extends ConsumerWidget {
                         children: [
                           Flexible(
                             child: Text(
-                              movie.title.toUpperCase(),
+                              widget.movie.title.toUpperCase(),
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 9,
@@ -225,7 +245,7 @@ class _MovieTimeCard extends ConsumerWidget {
                         const Icon(Icons.star, color: Colors.amber, size: 16),
                         const SizedBox(width: 4),
                         Text(
-                          movie.voteAverage.toStringAsFixed(1),
+                          widget.movie.voteAverage.toStringAsFixed(1),
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 16,
@@ -238,7 +258,7 @@ class _MovieTimeCard extends ConsumerWidget {
 
                     // Release Date
                     Text(
-                      movie.releaseDate.isNotEmpty ? 'Released: ${movie.releaseDate}' : 'Release Date Unknown',
+                      widget.movie.releaseDate.isNotEmpty ? 'Released: ${widget.movie.releaseDate}' : 'Release Date Unknown',
                       style: TextStyle(
                         color: Colors.grey[400],
                         fontSize: 13,
@@ -251,35 +271,63 @@ class _MovieTimeCard extends ConsumerWidget {
               ),
             ),
 
-            // 3. Right Action Button (Checkmark)
+            // 3. Right Action Button (Checkmark or Delete)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: movie.isWatched
-                  ? const Icon(Icons.check_circle, color: Colors.green, size: 36)
-                  : GestureDetector(
+              child: _showDelete
+                  ? GestureDetector(
                       onTap: () {
-                        // Toggle watched status
-                        ref.read(wishlistProvider.notifier).toggleWatched(movie.id);
+                        // Delete movie
+                        ref.read(wishlistProvider.notifier).removeMovie(widget.movie.id);
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('"${movie.title}" marked as watched!')),
+                          SnackBar(
+                            content: Text('"${widget.movie.title}" removed from watchlist!'),
+                            duration: const Duration(seconds: 2),
+                          ),
                         );
                       },
                       child: Container(
                         width: 36,
                         height: 36,
                         decoration: const BoxDecoration(
-                          color: Colors.white,
+                          color: Colors.red,
                           shape: BoxShape.circle,
                         ),
                         child: const Center(
                           child: Icon(
-                            Icons.check,
-                            color: Colors.black,
+                            Icons.delete,
+                            color: Colors.white,
                             size: 20,
                           ),
                         ),
                       ),
-                    ),
+                    )
+                  : widget.movie.isWatched
+                      ? const Icon(Icons.check_circle, color: Colors.green, size: 36)
+                      : GestureDetector(
+                          onTap: () {
+                            // Toggle watched status
+                            ref.read(wishlistProvider.notifier).toggleWatched(widget.movie.id);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('"${widget.movie.title}" marked as watched!')),
+                            );
+                          },
+                          child: Container(
+                            width: 36,
+                            height: 36,
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Center(
+                              child: Icon(
+                                Icons.check,
+                                color: Colors.black,
+                                size: 20,
+                              ),
+                            ),
+                          ),
+                        ),
             ),
           ],
         ),

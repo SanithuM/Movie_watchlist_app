@@ -97,7 +97,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                 ),
                 const SizedBox(height: 24),
                 const Text(
-                  'Welcome to CineList',
+                  'Welcome to Binged',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 20,
@@ -290,7 +290,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                             ),
                             child: const Center(
                               child: Text(
-                                'C',
+                                'B',
                                 style: TextStyle(
                                   color: Colors.black,
                                   fontSize: 22,
@@ -301,7 +301,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                           ),
                           const SizedBox(width: 8),
                           const Text(
-                            'CINELIST',
+                            'BINGED',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 22,
@@ -317,20 +317,23 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                     Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Thumbs up circular badge
+                        // Brand play button circular badge
                         Container(
                           width: 80,
                           height: 80,
                           decoration: BoxDecoration(
                             color: Colors.black.withValues(alpha: 0.8),
                             shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 1.5),
+                            border: Border.all(color: const Color(0xFFFFD200), width: 1.5),
                           ),
                           child: const Center(
-                            child: Icon(
-                              Icons.thumb_up_alt_rounded,
-                              size: 36,
-                              color: Colors.white,
+                            child: Padding(
+                              padding: EdgeInsets.only(left: 4.0),
+                              child: Icon(
+                                Icons.play_arrow_rounded,
+                                size: 40,
+                                color: Color(0xFFFFD200),
+                              ),
                             ),
                           ),
                         ),
@@ -338,7 +341,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                         const Padding(
                           padding: EdgeInsets.symmetric(horizontal: 20.0),
                           child: Text(
-                            'Help make your favorite shows even better',
+                            'Discover what deserves your time',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               color: Colors.white,
@@ -380,7 +383,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                         ),
                         const SizedBox(height: 24),
                         const Text(
-                          'CineList is a community-driven database for track records.\nBy continuing, you agree to our Terms.',
+                          'Binged is a community-driven database for track records.\nBy continuing, you agree to our Terms.',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: Colors.white54,
