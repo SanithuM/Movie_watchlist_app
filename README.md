@@ -12,9 +12,9 @@
 
 ## 📱 Screenshots
 
-|                          Home                         |                          Explore                         |                          Profile                         |                      Rating                     |
+|                          Home                         |                          Search                         |                          Profile                         |                      Detailed View                     |
 | :---------------------------------------------------: | :------------------------------------------------------: | :------------------------------------------------------: | :---------------------------------------------------: |
-| <img src="assets/screenshots/home.jpg" width="200" /> | <img src="assets/screenshots/explore.jpg" width="200" /> | <img src="assets/screenshots/profile.jpg" width="200" /> | <img src="assets/screenshots/rating system.jpg" width="200" /> |
+| <img src="assets/screenshots/home.jpg" width="200" /> | <img src="assets/screenshots/search.jpg" width="200" /> | <img src="assets/screenshots/profile.jpg" width="200" /> | <img src="assets/screenshots/view.jpg" width="200" /> |
 
 ---
 
