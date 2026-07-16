@@ -1,5 +1,5 @@
 //sets theme and app routes.
-import 'package:cinelist/features/movies/presentation/screens/main_screen.dart';
+import 'package:binged/features/movies/presentation/screens/main_screen.dart';
 import 'features/movies/presentation/screens/welcome_screen.dart';
 import 'package:flutter/material.dart';
 import 'features/auth/presentation/signup_screen.dart';
@@ -14,7 +14,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'CineList', // Project Name
+      title: 'Binged', // Project Name
       // 1. Theme Configuration (Blue)
       theme: ThemeData(
         brightness: Brightness.dark, // Dark mode is best for Movie apps

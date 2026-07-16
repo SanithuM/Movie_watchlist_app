@@ -1,4 +1,4 @@
-import 'package:cinelist/features/tv_shows/domain/entities/tv_show.dart';
+import 'package:binged/features/tv_shows/domain/entities/tv_show.dart';
 
 import '../../../../core/services/api_service.dart';
 

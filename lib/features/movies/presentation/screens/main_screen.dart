@@ -1,7 +1,7 @@
 // Bottom-tab main screen that switches between core pages.
-import 'package:cinelist/features/movies/presentation/screens/movie_screen.dart';
-import 'package:cinelist/features/movies/presentation/screens/profile_screen.dart';
-import 'package:cinelist/features/movies/presentation/screens/search_screen.dart';
+import 'package:binged/features/movies/presentation/screens/movie_screen.dart';
+import 'package:binged/features/movies/presentation/screens/profile_screen.dart';
+import 'package:binged/features/movies/presentation/screens/search_screen.dart';
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
 

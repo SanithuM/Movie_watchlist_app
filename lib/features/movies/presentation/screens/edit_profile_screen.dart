@@ -245,7 +245,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       const SizedBox(height: 24),
                       
                       const Text(
-                        "This is how you will appear to other users across CineList.",
+                        "This is how you will appear to other users across Binged.",
                         style: TextStyle(color: Colors.grey, fontSize: 13, height: 1.4),
                       ),
                     ],
